@@ -1,0 +1,27 @@
+{
+  "notes": "Aggregated salary ranges derived from public Sysarmy / Openqube surveys. Used only to bootstrap cohorts; each row creates 3 synthetic entries (low/median/high) tagged source='seed:sysarmy' under a sentinel profile id. They count toward k-anonymity but are clearly marked as aggregated.",
+  "paymentMonth": "2026-04-01",
+  "sentinelProfileId": "00000000-0000-0000-0000-00000000aaaa",
+  "rows": [
+    { "role": "backend developer", "seniority": "junior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 700000, "mid": 950000, "high": 1300000 },
+    { "role": "backend developer", "seniority": "ssr", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 1100000, "mid": 1500000, "high": 2000000 },
+    { "role": "backend developer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 1700000, "mid": 2300000, "high": 3100000 },
+    { "role": "backend developer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "5000+", "low": 2100000, "mid": 2900000, "high": 3900000 },
+    { "role": "backend developer", "seniority": "staff", "companyDomain": "_seed_sysarmy", "companySizeBucket": "5000+", "low": 3000000, "mid": 4100000, "high": 5500000 },
+    { "role": "frontend developer", "seniority": "junior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 650000, "mid": 900000, "high": 1200000 },
+    { "role": "frontend developer", "seniority": "ssr", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 1050000, "mid": 1400000, "high": 1900000 },
+    { "role": "frontend developer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 1600000, "mid": 2200000, "high": 2900000 },
+    { "role": "frontend developer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "5000+", "low": 2000000, "mid": 2700000, "high": 3700000 },
+    { "role": "fullstack developer", "seniority": "ssr", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 1100000, "mid": 1500000, "high": 2000000 },
+    { "role": "fullstack developer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "1000-5000", "low": 1800000, "mid": 2500000, "high": 3300000 },
+    { "role": "data engineer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "1000-5000", "low": 1900000, "mid": 2600000, "high": 3500000 },
+    { "role": "data scientist", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "1000-5000", "low": 2000000, "mid": 2800000, "high": 3700000 },
+    { "role": "devops engineer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "1000-5000", "low": 2000000, "mid": 2700000, "high": 3600000 },
+    { "role": "sre", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "5000+", "low": 2300000, "mid": 3100000, "high": 4200000 },
+    { "role": "qa engineer", "seniority": "ssr", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 900000, "mid": 1200000, "high": 1600000 },
+    { "role": "qa engineer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "1000-5000", "low": 1400000, "mid": 1900000, "high": 2500000 },
+    { "role": "engineering manager", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "1000-5000", "low": 2800000, "mid": 3800000, "high": 5000000 },
+    { "role": "product manager", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "1000-5000", "low": 2200000, "mid": 3000000, "high": 4000000 },
+    { "role": "designer", "seniority": "senior", "companyDomain": "_seed_sysarmy", "companySizeBucket": "200-1000", "low": 1500000, "mid": 2000000, "high": 2700000 }
+  ]
+}
