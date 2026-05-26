@@ -1,6 +1,5 @@
 -- Extensions
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 -- Schemas
 CREATE SCHEMA IF NOT EXISTS auth;
@@ -19,34 +18,6 @@ CREATE TABLE IF NOT EXISTS auth.users (
   password_hash text,
   profile_id uuid NOT NULL UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS auth.accounts (
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type text NOT NULL,
-  provider text NOT NULL,
-  provider_account_id text NOT NULL,
-  refresh_token text,
-  access_token text,
-  expires_at integer,
-  token_type text,
-  scope text,
-  id_token text,
-  session_state text,
-  PRIMARY KEY (provider, provider_account_id)
-);
-
-CREATE TABLE IF NOT EXISTS auth.sessions (
-  session_token text PRIMARY KEY,
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  expires timestamptz NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS auth.verification_tokens (
-  identifier text NOT NULL,
-  token text NOT NULL,
-  expires timestamptz NOT NULL,
-  PRIMARY KEY (identifier, token)
 );
 
 CREATE TABLE IF NOT EXISTS auth.work_email_verifications (
@@ -89,16 +60,7 @@ CREATE TABLE IF NOT EXISTS data.salary_entries (
   payment_month date NOT NULL,
   source text NOT NULL DEFAULT 'user',
   created_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (id, payment_month)
-);
-
--- TimescaleDB hypertable on payment_month
-SELECT create_hypertable(
-  'data.salary_entries',
-  'payment_month',
-  if_not_exists => TRUE,
-  migrate_data => TRUE,
-  chunk_time_interval => INTERVAL '1 year'
+  PRIMARY KEY (id)
 );
 
 CREATE INDEX IF NOT EXISTS salary_cohort_idx

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { RealWageChart } from "./RealWageChart";
 import { formatArs, formatUsd, parseArsInput } from "@/lib/currency";
@@ -20,7 +21,7 @@ interface Result {
   chart: { month: string; usdValue: number }[];
 }
 
-export function CalculatorForm() {
+export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
   const [arsRaw, setArsRaw] = useState("500000");
   const [month, setMonth] = useState(() => {
     const d = new Date();
@@ -112,7 +113,18 @@ export function CalculatorForm() {
             <RealWageChart data={result.chart} />
           </div>
           <p className="text-xs text-ink/50">
-            Sign up to track your real salary over time and benchmark against your cohort.
+            {loggedIn ? (
+              <>
+                <Link href="/dashboard" className="underline hover:text-ink">
+                  Open your dashboard
+                </Link>{" "}
+                to log salaries and compare against your cohort.
+              </>
+            ) : (
+              <>
+                Sign up to track your real salary over time and benchmark against your cohort.
+              </>
+            )}
           </p>
         </div>
       ) : null}

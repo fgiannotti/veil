@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { formatArs } from "@/lib/currency";
-
-const SENIORITIES = ["junior", "ssr", "senior", "staff", "principal", "lead"] as const;
+import { formatSeniority, SENIORITIES, type Seniority } from "@/lib/seniority";
 const BUCKETS = ["1-50", "50-200", "200-1000", "1000-5000", "5000+"] as const;
 
 interface Result {
@@ -13,13 +12,13 @@ interface Result {
   avg?: number;
   p25?: number;
   p50?: number;
-  p75?: number;
+  p95?: number;
   todayMonth?: string;
 }
 
 export default function BenchmarkPage() {
-  const [role, setRole] = useState("backend developer");
-  const [seniority, setSeniority] = useState<(typeof SENIORITIES)[number]>("senior");
+  const [role, setRole] = useState("developer");
+  const [seniority, setSeniority] = useState<Seniority>("senior");
   const [bucket, setBucket] = useState<(typeof BUCKETS)[number] | "auto">("auto");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +46,7 @@ export default function BenchmarkPage() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Cohort benchmark</h1>
       <p className="max-w-prose text-sm text-ink/70">
-        We only show numbers once a cohort (role + seniority + company size) has{" "}
+        We only show numbers once a cohort (role + seniority + approx. employee headcount) has{" "}
         <strong>3 or more verified entries</strong>. All historical entries are
         inflation-adjusted to today's pesos using IPC.
       </p>
@@ -66,23 +65,23 @@ export default function BenchmarkPage() {
           <select
             className="input"
             value={seniority}
-            onChange={(e) => setSeniority(e.target.value as (typeof SENIORITIES)[number])}
+            onChange={(e) => setSeniority(e.target.value as Seniority)}
           >
             {SENIORITIES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {formatSeniority(s)}
               </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="label">Company size</label>
+          <label className="label">Approx. employee headcount</label>
           <select
             className="input"
             value={bucket}
             onChange={(e) => setBucket(e.target.value as typeof bucket)}
           >
-            <option value="auto">Use my company's size</option>
+            <option value="auto">Use my company&apos;s headcount</option>
             {BUCKETS.map((b) => (
               <option key={b} value={b}>
                 {b}
@@ -111,7 +110,7 @@ export default function BenchmarkPage() {
               <Row label="p25" value={formatArs(result.p25 ?? 0)} />
               <Row label="median" value={formatArs(result.p50 ?? 0)} />
               <Row label="average" value={formatArs(result.avg ?? 0)} />
-              <Row label="p75" value={formatArs(result.p75 ?? 0)} />
+              <Row label="p95" value={formatArs(result.p95 ?? 0)} />
             </dl>
           )}
         </div>

@@ -1,6 +1,9 @@
 import { CalculatorForm } from "@/components/CalculatorForm";
+import { auth } from "@/server/auth";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth();
+
   return (
     <div className="space-y-6">
       <section>
@@ -13,7 +16,7 @@ export default function HomePage() {
           can also contribute and compare against their cohort, anonymously.
         </p>
       </section>
-      <CalculatorForm />
+      <CalculatorForm loggedIn={Boolean(session?.profileId)} />
     </div>
   );
 }

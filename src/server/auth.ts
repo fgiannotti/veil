@@ -1,11 +1,15 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import type { Provider } from "next-auth/providers";
 import { compare } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { users } from "@/server/db/schema/auth";
 import { randomUUID } from "node:crypto";
+import { isGoogleAuthEnabled } from "@/server/auth-config";
+
+export { isGoogleAuthEnabled } from "@/server/auth-config";
 
 declare module "next-auth" {
   interface Session {
@@ -21,43 +25,52 @@ declare module "@auth/core/jwt" {
   }
 }
 
+const providers: Provider[] = [
+  Credentials({
+    name: "credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(creds) {
+      const email = String(creds?.email ?? "").toLowerCase().trim();
+      const password = String(creds?.password ?? "");
+      if (!email || !password) return null;
+
+      const [row] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (!row || !row.passwordHash) return null;
+
+      const ok = await compare(password, row.passwordHash);
+      if (!ok) return null;
+
+      return {
+        id: row.id,
+        email: row.email ?? undefined,
+        name: row.name ?? undefined,
+        profileId: row.profileId,
+      } as { id: string; email?: string; name?: string; profileId: string };
+    },
+  }),
+];
+
+if (isGoogleAuthEnabled()) {
+  providers.push(
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      // Same email may have signed up with password first.
+      allowDangerousEmailAccountLinking: true,
+    }),
+  );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
   },
-  providers: [
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(creds) {
-        const email = String(creds?.email ?? "").toLowerCase().trim();
-        const password = String(creds?.password ?? "");
-        if (!email || !password) return null;
-
-        const [row] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-        if (!row || !row.passwordHash) return null;
-
-        const ok = await compare(password, row.passwordHash);
-        if (!ok) return null;
-
-        return {
-          id: row.id,
-          email: row.email ?? undefined,
-          name: row.name ?? undefined,
-          profileId: row.profileId,
-        } as { id: string; email?: string; name?: string; profileId: string };
-      },
-    }),
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-    }),
-  ],
+  providers,
   callbacks: {
     async signIn({ user, account }) {
       // For Google sign-in, ensure a users row exists with a stable profile_id.

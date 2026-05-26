@@ -12,6 +12,7 @@ import {
   type IndicatorRow,
 } from "@/server/inflation";
 import { formatArs, formatUsd } from "@/lib/currency";
+import { formatSeniority } from "@/lib/seniority";
 import { monthLabel } from "@/lib/dates";
 import { RealWageChart } from "@/components/RealWageChart";
 
@@ -83,11 +84,16 @@ export default async function DashboardPage() {
       </section>
 
       <section className="card space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">Real wage history</h2>
-          <Link href="/salaries/new" className="btn">
-            Add salary
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/companies" className="btn-secondary">
+              Browse by company
+            </Link>
+            <Link href="/salaries/new" className="btn">
+              Add salary
+            </Link>
+          </div>
         </div>
         {entries.length === 0 ? (
           <p className="text-sm text-ink/70">No entries yet.</p>
@@ -111,7 +117,7 @@ export default async function DashboardPage() {
                     <div>
                       <div className="font-medium">{monthLabel(e.paymentMonth)}</div>
                       <div className="text-xs text-ink/60">
-                        {e.role} · {e.seniority}
+                        {e.role} · {formatSeniority(e.seniority)}
                       </div>
                     </div>
                     <div className="text-right">

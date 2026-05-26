@@ -1,6 +1,12 @@
-import { desc, lte } from "drizzle-orm";
+import { asc, desc, gte, lte } from "drizzle-orm";
+import { todayFirstOfMonth } from "@/lib/dates";
 import { db } from "@/server/db/client";
 import { economicIndicators } from "@/server/db/schema/data";
+
+/** True when both dates are first-of-month strings in the same YYYY-MM. */
+export function sameCalendarMonth(a: string, b: string): boolean {
+  return a.slice(0, 7) === b.slice(0, 7);
+}
 
 export interface IndicatorRow {
   date: string;
@@ -9,20 +15,12 @@ export interface IndicatorRow {
   ipcIndex: number;
 }
 
-/**
- * Returns the indicator row at-or-before the given date string ("YYYY-MM-DD").
- * Throws if no row exists.
- */
-export async function indicatorAtOrBefore(date: string): Promise<IndicatorRow> {
-  const [row] = await db
-    .select()
-    .from(economicIndicators)
-    .where(lte(economicIndicators.date, date))
-    .orderBy(desc(economicIndicators.date))
-    .limit(1);
-  if (!row) {
-    throw new Error(`No economic indicator data available for ${date}`);
-  }
+function toIndicatorRow(row: {
+  date: string;
+  usdBlueBuy: number;
+  usdBlueSell: number;
+  ipcIndex: number;
+}): IndicatorRow {
   return {
     date: row.date,
     usdBlueBuy: row.usdBlueBuy,
@@ -31,19 +29,67 @@ export async function indicatorAtOrBefore(date: string): Promise<IndicatorRow> {
   };
 }
 
-export async function latestIndicator(): Promise<IndicatorRow> {
-  const [row] = await db
+/**
+ * Picks the indicator for a payment month. Prefers at-or-before; may use a later row
+ * in the same calendar month only (e.g. 2026-03-01 → 2026-03-06).
+ */
+export function resolveIndicatorForDate(
+  date: string,
+  atOrBefore: IndicatorRow | undefined,
+  sameMonthAfter: IndicatorRow | undefined,
+): IndicatorRow {
+  if (atOrBefore) return atOrBefore;
+  if (sameMonthAfter && sameCalendarMonth(date, sameMonthAfter.date)) {
+    return sameMonthAfter;
+  }
+  throw new Error(`No economic indicator data available for ${date}`);
+}
+
+/**
+ * Returns the indicator row at-or-before the given date string ("YYYY-MM-DD").
+ * If none exists, may use a later row in the same month only (not a future month).
+ * Throws if the indicators table has no usable row for that date.
+ */
+export async function indicatorAtOrBefore(date: string): Promise<IndicatorRow> {
+  const [before] = await db
     .select()
     .from(economicIndicators)
+    .where(lte(economicIndicators.date, date))
     .orderBy(desc(economicIndicators.date))
     .limit(1);
-  if (!row) throw new Error("No indicators in DB. Run migrations + indicators:refresh.");
-  return {
-    date: row.date,
-    usdBlueBuy: row.usdBlueBuy,
-    usdBlueSell: row.usdBlueSell,
-    ipcIndex: row.ipcIndex,
-  };
+
+  if (before) return toIndicatorRow(before);
+
+  const [after] = await db
+    .select()
+    .from(economicIndicators)
+    .where(gte(economicIndicators.date, date))
+    .orderBy(asc(economicIndicators.date))
+    .limit(1);
+
+  const sameMonthAfter =
+    after && sameCalendarMonth(date, after.date) ? toIndicatorRow(after) : undefined;
+
+  return resolveIndicatorForDate(date, undefined, sameMonthAfter);
+}
+
+/**
+ * Indicator for adjusting salaries to "today" — the latest row on or before the
+ * current calendar month, not merely the newest row in the DB.
+ */
+export async function latestIndicator(): Promise<IndicatorRow> {
+  const target = todayFirstOfMonth();
+  try {
+    return await indicatorAtOrBefore(target);
+  } catch {
+    const [row] = await db
+      .select()
+      .from(economicIndicators)
+      .orderBy(desc(economicIndicators.date))
+      .limit(1);
+    if (!row) throw new Error("No indicators in DB. Run migrations + indicators:refresh.");
+    return toIndicatorRow(row);
+  }
 }
 
 /**

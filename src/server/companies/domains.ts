@@ -25,6 +25,23 @@ const BLOCKED_PERSONAL = new Set([
   "msn.com",
 ]);
 
+/** Normalize a company domain from user input (`globant.com`, `@globant.com`, URLs). */
+export function normalizeCompanyDomain(input: string): string {
+  let s = input.trim().toLowerCase();
+  s = s.replace(/^@/, "");
+  try {
+    if (s.includes("://")) {
+      s = new URL(s).hostname;
+    }
+  } catch {
+    // keep as-is
+  }
+  s = s.replace(/^www\./, "");
+  const slash = s.indexOf("/");
+  if (slash >= 0) s = s.slice(0, slash);
+  return s;
+}
+
 export function extractDomain(email: string): string {
   const at = email.lastIndexOf("@");
   if (at < 0) return "";
@@ -51,4 +68,31 @@ function inferSizeFromDomain(_domain: string): SizeBucket {
 
 export function listKnownCompanies(): { domain: string; name: string; sizeBucket: SizeBucket }[] {
   return Object.entries(TIER1).map(([domain, meta]) => ({ domain, ...meta }));
+}
+
+/**
+ * Resolve user input (company name or email domain) to a company domain.
+ * Returns null when the input cannot be matched unambiguously.
+ */
+export function resolveCompanyQuery(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const asDomain = normalizeCompanyDomain(trimmed);
+  if (asDomain.startsWith("_")) return null;
+
+  if (asDomain.includes(".")) return asDomain;
+
+  const lower = trimmed.toLowerCase();
+
+  const byName = Object.entries(TIER1).filter(([, meta]) => meta.name.toLowerCase() === lower);
+  if (byName.length === 1) return byName[0]![0];
+  if (byName.length > 1) return null;
+
+  const byDomainPrefix = Object.keys(TIER1).filter(
+    (d) => d === asDomain || d.startsWith(`${asDomain}.`),
+  );
+  if (byDomainPrefix.length === 1) return byDomainPrefix[0]!;
+
+  return null;
 }

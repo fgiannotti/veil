@@ -22,6 +22,7 @@
   "10pines.com": { "name": "10Pines", "sizeBucket": "50-200" },
   "etermax.com": { "name": "Etermax", "sizeBucket": "200-1000" },
   "olx.com": { "name": "OLX", "sizeBucket": "1000-5000" },
+  "prisma.com": { "name": "Prisma", "sizeBucket": "1000-5000" },
   "tiendanube.com": { "name": "Tiendanube", "sizeBucket": "200-1000" },
   "satellogic.com": { "name": "Satellogic", "sizeBucket": "200-1000" }
 }

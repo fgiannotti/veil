@@ -30,7 +30,7 @@ export interface BenchmarkResult {
   avg?: number;
   p25?: number;
   p50?: number;
-  p75?: number;
+  p95?: number;
 }
 
 /**
@@ -69,7 +69,7 @@ export function buildBenchmark(
     avg,
     p25: percentile(realToday, 0.25),
     p50: percentile(realToday, 0.5),
-    p75: percentile(realToday, 0.75),
+    p95: percentile(realToday, 0.95),
   };
 }
 

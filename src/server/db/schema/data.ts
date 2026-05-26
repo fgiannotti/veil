@@ -47,6 +47,7 @@ export const salaryEntries = dataSchema.table(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({
+    pk: primaryKey({ columns: [t.id] }),
     cohortIdx: index("salary_cohort_idx").on(
       t.role,
       t.seniority,

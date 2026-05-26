@@ -96,7 +96,7 @@ describe("buildBenchmark", () => {
     expect(res.avg).toBeCloseTo(1_500_000, 6);
     expect(res.p25).toBeCloseTo(1_250_000, 6);
     expect(res.p50).toBeCloseTo(1_500_000, 6);
-    expect(res.p75).toBeCloseTo(1_750_000, 6);
+    expect(res.p95).toBeCloseTo(1_950_000, 6);
   });
 
   it("inflates older entries to today's pesos using IPC ratio", () => {

@@ -1,11 +1,4 @@
-import {
-  pgSchema,
-  text,
-  timestamp,
-  uuid,
-  primaryKey,
-  integer,
-} from "drizzle-orm/pg-core";
+import { pgSchema, text, timestamp, uuid, integer } from "drizzle-orm/pg-core";
 
 export const authSchema = pgSchema("auth");
 
@@ -19,48 +12,6 @@ export const users = authSchema.table("users", {
   profileId: uuid("profile_id").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
-
-export const accounts = authSchema.table(
-  "accounts",
-  {
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    type: text("type").notNull(),
-    provider: text("provider").notNull(),
-    providerAccountId: text("provider_account_id").notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: text("token_type"),
-    scope: text("scope"),
-    id_token: text("id_token"),
-    session_state: text("session_state"),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.provider, t.providerAccountId] }),
-  }),
-);
-
-export const sessions = authSchema.table("sessions", {
-  sessionToken: text("session_token").primaryKey(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { withTimezone: true }).notNull(),
-});
-
-export const verificationTokens = authSchema.table(
-  "verification_tokens",
-  {
-    identifier: text("identifier").notNull(),
-    token: text("token").notNull(),
-    expires: timestamp("expires", { withTimezone: true }).notNull(),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.identifier, t.token] }),
-  }),
-);
 
 export const workEmailVerifications = authSchema.table("work_email_verifications", {
   id: uuid("id").defaultRandom().primaryKey(),

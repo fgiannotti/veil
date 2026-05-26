@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseArsInput } from "@/lib/currency";
-
-const SENIORITIES = ["junior", "ssr", "senior", "staff", "principal", "lead"] as const;
+import { formatSeniority, SENIORITIES, type Seniority } from "@/lib/seniority";
 
 export default function NewSalaryPage() {
   const router = useRouter();
   const [role, setRole] = useState("");
-  const [seniority, setSeniority] = useState<(typeof SENIORITIES)[number]>("senior");
+  const [seniority, setSeniority] = useState<Seniority>("senior");
   const [arsRaw, setArsRaw] = useState("");
   const [paymentMonth, setPaymentMonth] = useState(() => {
     const d = new Date();
@@ -53,7 +52,7 @@ export default function NewSalaryPage() {
     <div className="mx-auto max-w-md space-y-6">
       <h1 className="text-xl font-semibold">Log a salary entry</h1>
       <p className="text-sm text-ink/70">
-        Only the role, seniority, company size bucket, amount, and month are stored
+        Only the role, seniority, approx. employee headcount, amount, and month are stored
         against your opaque profile id. Nothing links this to your email.
       </p>
       <form onSubmit={submit} className="card space-y-3">
@@ -66,7 +65,7 @@ export default function NewSalaryPage() {
             className="input"
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            placeholder="backend developer"
+            placeholder="developer"
             required
           />
         </div>
@@ -78,11 +77,11 @@ export default function NewSalaryPage() {
             id="seniority"
             className="input"
             value={seniority}
-            onChange={(e) => setSeniority(e.target.value as (typeof SENIORITIES)[number])}
+            onChange={(e) => setSeniority(e.target.value as Seniority)}
           >
             {SENIORITIES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {formatSeniority(s)}
               </option>
             ))}
           </select>
