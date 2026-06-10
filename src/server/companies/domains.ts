@@ -96,3 +96,14 @@ export function resolveCompanyQuery(input: string): string | null {
 
   return null;
 }
+
+/** Resolve input to a tier-1 company domain + size bucket, or null if unknown. */
+export function resolveKnownCompany(
+  input: string,
+): { domain: string; name: string; sizeBucket: SizeBucket } | null {
+  const domain = resolveCompanyQuery(input);
+  if (!domain) return null;
+  const meta = TIER1[domain.toLowerCase()];
+  if (!meta) return null;
+  return { domain, ...meta };
+}

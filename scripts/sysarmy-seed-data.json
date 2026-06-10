@@ -1,0 +1,40 @@
+{
+  "notes": "Aggregated salary ranges derived from public Sysarmy / Openqube surveys. Companies are lowercase keys matching tier1.json names; unknown companies are skipped on import.",
+  "paymentMonth": "2026-04-01",
+  "sentinelProfileId": "00000000-0000-0000-0000-00000000aaaa",
+  "companies": {
+    "globant": [
+      { "role": "backend developer", "seniority": "junior", "low": 700000, "mid": 950000, "high": 1300000 },
+      { "role": "backend developer", "seniority": "senior", "low": 2100000, "mid": 2900000, "high": 3900000 },
+      { "role": "frontend developer", "seniority": "ssr", "low": 1050000, "mid": 1400000, "high": 1900000 },
+      { "role": "fullstack developer", "seniority": "ssr", "low": 1100000, "mid": 1500000, "high": 2000000 },
+      { "role": "data scientist", "seniority": "senior", "low": 2000000, "mid": 2800000, "high": 3700000 },
+      { "role": "qa engineer", "seniority": "ssr", "low": 900000, "mid": 1200000, "high": 1600000 },
+      { "role": "product manager", "seniority": "senior", "low": 2200000, "mid": 3000000, "high": 4000000 }
+    ],
+    "mercado libre": [
+      { "role": "backend developer", "seniority": "senior", "low": 1700000, "mid": 2300000, "high": 3100000 },
+      { "role": "backend developer", "seniority": "staff", "low": 3000000, "mid": 4100000, "high": 5500000 },
+      { "role": "frontend developer", "seniority": "senior", "low": 1600000, "mid": 2200000, "high": 2900000 },
+      { "role": "fullstack developer", "seniority": "senior", "low": 1800000, "mid": 2500000, "high": 3300000 },
+      { "role": "devops engineer", "seniority": "senior", "low": 2000000, "mid": 2700000, "high": 3600000 },
+      { "role": "qa engineer", "seniority": "senior", "low": 1400000, "mid": 1900000, "high": 2500000 },
+      { "role": "designer", "seniority": "senior", "low": 1500000, "mid": 2000000, "high": 2700000 },
+      {
+        "role": "backend developer",
+        "seniority": "ssr",
+        "netArs": 2800000,
+        "paymentMonth": "2026-06-01",
+        "note": "2.6M neto + 200k beneficio Mercado Pago. Semi senior, ~3y4m exp total."
+      }
+    ],
+    "rappi": [
+      { "role": "backend developer", "seniority": "ssr", "low": 1100000, "mid": 1500000, "high": 2000000 },
+      { "role": "frontend developer", "seniority": "junior", "low": 650000, "mid": 900000, "high": 1200000 },
+      { "role": "frontend developer", "seniority": "senior", "low": 2000000, "mid": 2700000, "high": 3700000 },
+      { "role": "data engineer", "seniority": "senior", "low": 1900000, "mid": 2600000, "high": 3500000 },
+      { "role": "sre", "seniority": "senior", "low": 2300000, "mid": 3100000, "high": 4200000 },
+      { "role": "engineering manager", "seniority": "senior", "low": 2800000, "mid": 3800000, "high": 5000000 }
+    ]
+  }
+}
