@@ -13,6 +13,7 @@ import {
 } from "@/server/inflation";
 import { formatArs, formatUsd } from "@/lib/currency";
 import { formatSeniority } from "@/lib/seniority";
+import { formatRole } from "@/lib/roles";
 import { monthLabel } from "@/lib/dates";
 import { RealWageChart } from "@/components/RealWageChart";
 
@@ -62,22 +63,22 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <section className="card">
-        <h2 className="text-lg font-semibold">Your veil</h2>
+        <h2 className="text-lg font-semibold">Tu veil</h2>
         <p className="mt-1 text-sm text-ink/70">
           {domain ? (
             <>
-              Verified at <strong>@{domain}</strong>.{" "}
+              Verificado en <strong>@{domain}</strong>.{" "}
               <Link href="/verify" className="underline">
-                Change company
+                Cambiar empresa
               </Link>
             </>
           ) : (
             <>
-              You haven't verified a work email yet.{" "}
+              Todavía no verificaste un email laboral.{" "}
               <Link href="/verify" className="underline">
-                Verify now
+                Verificá ahora
               </Link>{" "}
-              to log salaries.
+              para cargar sueldos.
             </>
           )}
         </p>
@@ -85,23 +86,23 @@ export default async function DashboardPage() {
 
       <section className="card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">Real wage history</h2>
+          <h2 className="text-lg font-semibold">Historial de sueldo real</h2>
           <div className="flex gap-2">
             <Link href="/companies" className="btn-secondary">
-              Browse by company
+              Ver por empresa
             </Link>
             <Link href="/salaries/new" className="btn">
-              Add salary
+              Agregar sueldo
             </Link>
           </div>
         </div>
         {entries.length === 0 ? (
-          <p className="text-sm text-ink/70">No entries yet.</p>
+          <p className="text-sm text-ink/70">Sin entradas todavía.</p>
         ) : (
           <>
             {chart.length > 0 ? (
               <>
-                <p className="label">USD Blue value at time of payment</p>
+                <p className="label">Valor en USD Blue al momento del pago</p>
                 <RealWageChart data={chart} />
               </>
             ) : null}
@@ -117,7 +118,12 @@ export default async function DashboardPage() {
                     <div>
                       <div className="font-medium">{monthLabel(e.paymentMonth)}</div>
                       <div className="text-xs text-ink/60">
-                        {e.role} · {formatSeniority(e.seniority)}
+                        {formatRole(e.role)} · {formatSeniority(e.seniority)}
+                        {e.status === "pending" && (
+                          <span className="ml-2 rounded bg-amber-100 px-1 py-0.5 text-amber-700">
+                            en revisión
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
@@ -125,7 +131,7 @@ export default async function DashboardPage() {
                       {r ? (
                         <div className="text-xs text-ink/60">
                           {formatUsd(r.usdValueAtPayment)} blue ·{" "}
-                          {formatArs(r.realArsToday)} today
+                          {formatArs(r.realArsToday)} hoy
                         </div>
                       ) : null}
                     </div>

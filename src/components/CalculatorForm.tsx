@@ -14,6 +14,7 @@ interface Breakdown {
   realArsToday: number;
   usdValueToday: number;
   purchasingPowerChangePct: number;
+  ipcDataStale: boolean;
 }
 
 interface Result {
@@ -23,10 +24,11 @@ interface Result {
 
 export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
   const [arsRaw, setArsRaw] = useState("500000");
-  const [month, setMonth] = useState(() => {
+  const currentMonth = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  });
+  })();
+  const [month, setMonth] = useState(currentMonth);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -59,7 +61,7 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
       <form onSubmit={submit} className="card space-y-4">
         <div>
           <label className="label" htmlFor="ars">
-            Net salary (ARS)
+            Sueldo neto (ARS)
           </label>
           <input
             id="ars"
@@ -72,57 +74,69 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
         </div>
         <div>
           <label className="label" htmlFor="month">
-            Month received
+            Mes cobrado
           </label>
           <input
             id="month"
             type="month"
             className="input"
             value={month}
+            max={currentMonth}
             onChange={(e) => setMonth(e.target.value)}
           />
         </div>
         <button className="btn" type="submit" disabled={loading}>
-          {loading ? "Calculating..." : "Calculate real value"}
+          {loading ? "Calculando..." : "Calcular valor real"}
         </button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </form>
 
       {result ? (
         <div className="card space-y-4">
-          <Row label="Net ARS at payment" value={formatArs(result.breakdown.netArs)} />
+          {result.breakdown.paymentMonth.slice(0, 7) === result.breakdown.todayMonth.slice(0, 7) ? (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Seleccionaste el mes actual. El dólar blue y el IPC son los mismos que "hoy",
+              así que la variación es 0%. Probá con un mes anterior para ver la evolución.
+            </p>
+          ) : result.breakdown.ipcDataStale ? (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              El INDEC publica el IPC con ~30 días de demora. Los datos de inflación
+              para este período todavía no están disponibles; el ajuste por IPC no se puede calcular.
+            </p>
+          ) : null}
+          <Row label="ARS neto al cobro" value={formatArs(result.breakdown.netArs)} />
           <Row
-            label="USD Blue at payment"
-            value={`${formatUsd(result.breakdown.usdValueAtPayment)} (at ${result.breakdown.usdBlueAtPayment.toLocaleString("es-AR")} ARS/USD)`}
+            label="USD Blue al cobro"
+            value={`${formatUsd(result.breakdown.usdValueAtPayment)} (a ${result.breakdown.usdBlueAtPayment.toLocaleString("es-AR")} ARS/USD)`}
           />
           <Row
-            label="USD Blue today"
+            label="USD Blue hoy"
             value={formatUsd(result.breakdown.usdValueToday)}
           />
           <Row
-            label="Equivalent in today's pesos (IPC)"
-            value={formatArs(result.breakdown.realArsToday)}
+            label="Equivalente en pesos de hoy (IPC)"
+            value={result.breakdown.ipcDataStale ? "—" : formatArs(result.breakdown.realArsToday)}
           />
           <Row
-            label="Purchasing power change (USD)"
+            label="Variación precio dólar blue"
             value={`${result.breakdown.purchasingPowerChangePct.toFixed(1)}%`}
             tone={result.breakdown.purchasingPowerChangePct >= 0 ? "good" : "bad"}
           />
           <div className="pt-2">
-            <p className="label">Monthly USD value of that wage</p>
+            <p className="label">Valor mensual en USD de ese sueldo</p>
             <RealWageChart data={result.chart} />
           </div>
           <p className="text-xs text-ink/50">
             {loggedIn ? (
               <>
                 <Link href="/dashboard" className="underline hover:text-ink">
-                  Open your dashboard
+                  Abrí tu panel
                 </Link>{" "}
-                to log salaries and compare against your cohort.
+                para registrar sueldos y compararte con tu cohorte.
               </>
             ) : (
               <>
-                Sign up to track your real salary over time and benchmark against your cohort.
+                Registrate para seguir la evolución de tu sueldo real y compararte con tu cohorte.
               </>
             )}
           </p>

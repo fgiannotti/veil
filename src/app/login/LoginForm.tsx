@@ -26,7 +26,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
     });
     setLoading(false);
     if (res?.error) {
-      setError("Invalid email or password");
+      setError("Email o contraseña incorrectos");
       return;
     }
     router.push(callbackUrl);
@@ -34,7 +34,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-xl font-semibold">Log in</h1>
+      <h1 className="text-xl font-semibold">Iniciar sesión</h1>
       <form onSubmit={submit} className="card space-y-3">
         <div>
           <label className="label" htmlFor="email">
@@ -52,7 +52,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
         </div>
         <div>
           <label className="label" htmlFor="password">
-            Password
+            Contraseña
           </label>
           <input
             id="password"
@@ -65,7 +65,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
           />
         </div>
         <button className="btn" disabled={loading} type="submit">
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Ingresando..." : "Entrar"}
         </button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </form>
@@ -75,13 +75,13 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
           className="btn-secondary w-full"
           onClick={() => signIn("google", { callbackUrl })}
         >
-          Continue with Google
+          Continuar con Google
         </button>
       ) : null}
       <p className="text-center text-sm text-ink/70">
-        New here?{" "}
+        ¿Primera vez?{" "}
         <Link href="/signup" className="underline">
-          Sign up
+          Registrate
         </Link>
       </p>
     </div>

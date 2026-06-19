@@ -128,6 +128,7 @@ export interface RealWageBreakdown {
   realArsToday: number;
   usdValueToday: number;
   purchasingPowerChangePct: number;
+  ipcDataStale: boolean;
 }
 
 export function computeRealWage(
@@ -143,6 +144,10 @@ export function computeRealWage(
     usdValueAtPayment > 0
       ? ((usdValueToday - usdValueAtPayment) / usdValueAtPayment) * 100
       : 0;
+  const ipcDataStale =
+    paymentIndicator.ipcIndex === todayIndicator.ipcIndex &&
+    !sameCalendarMonth(paymentIndicator.date, todayIndicator.date);
+
   return {
     netArs,
     paymentMonth,
@@ -152,5 +157,6 @@ export function computeRealWage(
     realArsToday,
     usdValueToday,
     purchasingPowerChangePct,
+    ipcDataStale,
   };
 }

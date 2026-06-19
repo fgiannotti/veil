@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, SQL } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { salaryEntries } from "@/server/db/schema/data";
 import {
@@ -13,7 +13,7 @@ export const K_ANONYMITY_THRESHOLD = 3;
 export interface BenchmarkInput {
   role: string;
   seniority: string;
-  companySizeBucket: string;
+  companySizeBucket?: string;
 }
 
 interface RawEntry {
@@ -88,16 +88,19 @@ export function percentile(sorted: number[], q: number): number {
 }
 
 export async function getBenchmark(input: BenchmarkInput): Promise<BenchmarkResult> {
+  const conditions: SQL[] = [
+    eq(salaryEntries.role, input.role),
+    eq(salaryEntries.seniority, input.seniority),
+    eq(salaryEntries.status, "published"),
+  ];
+  if (input.companySizeBucket) {
+    conditions.push(eq(salaryEntries.companySizeBucket, input.companySizeBucket));
+  }
+
   const rows = await db
     .select({ netArs: salaryEntries.netArs, paymentMonth: salaryEntries.paymentMonth })
     .from(salaryEntries)
-    .where(
-      and(
-        eq(salaryEntries.role, input.role),
-        eq(salaryEntries.seniority, input.seniority),
-        eq(salaryEntries.companySizeBucket, input.companySizeBucket),
-      ),
-    );
+    .where(and(...conditions));
 
   if (rows.length < K_ANONYMITY_THRESHOLD) {
     return {

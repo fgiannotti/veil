@@ -44,6 +44,7 @@ export const salaryEntries = dataSchema.table(
     netArs: bigint("net_ars", { mode: "number" }).notNull(),
     paymentMonth: date("payment_month").notNull(),
     source: text("source").default("user").notNull(),
+    status: text("status").default("published").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({
@@ -55,6 +56,7 @@ export const salaryEntries = dataSchema.table(
       t.paymentMonth,
     ),
     profileIdx: index("salary_profile_idx").on(t.profileId, t.paymentMonth),
+    statusIdx: index("salary_status_idx").on(t.status),
   }),
 );
 
@@ -66,6 +68,18 @@ export const economicIndicators = dataSchema.table("economic_indicators", {
   source: text("source").default("mixed").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const domainRequests = dataSchema.table(
+  "domain_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    domain: text("domain").notNull(),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    byDomain: index("domain_requests_domain_idx").on(t.domain),
+  }),
+);
 
 /**
  * Phase 1.1 stub - schema only, no routes/UI.

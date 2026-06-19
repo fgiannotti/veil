@@ -3,7 +3,7 @@ import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { workEmailVerifications } from "@/server/db/schema/auth";
 import { companyBadges } from "@/server/db/schema/data";
-import { extractDomain, isPersonalDomain } from "@/server/companies/domains";
+import { extractDomain, isPersonalDomain, isKnownDomain } from "@/server/companies/domains";
 import { sendVerificationCode } from "@/server/mail";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
@@ -32,12 +32,18 @@ export async function startVerification(profileId: string, workEmail: string): P
   const email = workEmail.toLowerCase().trim();
   const domain = extractDomain(email);
   if (!domain) {
-    throw new VerificationError("invalid_email", "Invalid email address");
+    throw new VerificationError("invalid_email", "Dirección de email inválida");
   }
   if (isPersonalDomain(domain)) {
     throw new VerificationError(
       "personal_email",
-      "Please use a work email, not a personal one (Gmail/Outlook/etc.)",
+      "Usá un email laboral, no uno personal (Gmail/Outlook/etc.)",
+    );
+  }
+  if (!isKnownDomain(domain)) {
+    throw new VerificationError(
+      "unknown_domain",
+      `El dominio @${domain} no está en nuestra lista de empresas verificadas.`,
     );
   }
 
@@ -98,12 +104,12 @@ export async function confirmVerification(
     );
 
   if (rows.length === 0) {
-    throw new VerificationError("expired_or_missing", "No active verification - request a new code");
+    throw new VerificationError("expired_or_missing", "No hay verificación activa, solicitá un nuevo código");
   }
 
   const row = rows[0];
   if (row.attempts >= MAX_ATTEMPTS) {
-    throw new VerificationError("too_many_attempts", "Too many attempts - request a new code");
+    throw new VerificationError("too_many_attempts", "Demasiados intentos, solicitá un nuevo código");
   }
 
   if (row.codeHash !== codeHash) {
@@ -111,7 +117,7 @@ export async function confirmVerification(
       .update(workEmailVerifications)
       .set({ attempts: row.attempts + 1 })
       .where(eq(workEmailVerifications.id, row.id));
-    throw new VerificationError("wrong_code", "Incorrect code");
+    throw new VerificationError("wrong_code", "Código incorrecto");
   }
 
   // Success - consume the verification record (raw email never persisted).

@@ -52,6 +52,10 @@ export function isPersonalDomain(domain: string): boolean {
   return BLOCKED_PERSONAL.has(domain.toLowerCase());
 }
 
+export function isKnownDomain(domain: string): boolean {
+  return domain.toLowerCase() in TIER1;
+}
+
 export function getCompanyMeta(domain: string): CompanyMeta {
   const meta = TIER1[domain.toLowerCase()];
   if (meta) return meta;

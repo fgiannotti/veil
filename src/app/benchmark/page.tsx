@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { formatArs } from "@/lib/currency";
 import { formatSeniority, SENIORITIES, type Seniority } from "@/lib/seniority";
+import { ROLES, formatRole, type Role } from "@/lib/roles";
+import tier1 from "@/server/companies/tier1.json";
+
 const BUCKETS = ["1-50", "50-200", "200-1000", "1000-5000", "5000+"] as const;
+type Bucket = (typeof BUCKETS)[number] | "auto" | "all";
 
 interface Result {
   status: "ok" | "insufficient_data";
@@ -17,12 +23,34 @@ interface Result {
 }
 
 export default function BenchmarkPage() {
-  const [role, setRole] = useState("developer");
+  return (
+    <Suspense>
+      <BenchmarkContent />
+    </Suspense>
+  );
+}
+
+function BenchmarkContent() {
+  const params = useSearchParams();
+  const companyDomain = params.get("company");
+  const companyMeta = companyDomain ? (tier1 as Record<string, { name: string; sizeBucket: Bucket }>)[companyDomain] : null;
+  const companyName = companyMeta?.name ?? null;
+  const initialBucket = companyMeta?.sizeBucket ?? "all";
+
+  const [role, setRole] = useState<Role>("developer");
   const [seniority, setSeniority] = useState<Seniority>("senior");
-  const [bucket, setBucket] = useState<(typeof BUCKETS)[number] | "auto">("auto");
+  const [bucket, setBucket] = useState<Bucket>(initialBucket);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const [hasEntry, setHasEntry] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/salaries")
+      .then((r) => r.json())
+      .then((j) => setHasEntry(Array.isArray(j.entries) && j.entries.length > 0))
+      .catch(() => setHasEntry(false));
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +58,7 @@ export default function BenchmarkPage() {
     setLoading(true);
     try {
       const q = new URLSearchParams({ role, seniority });
-      if (bucket !== "auto") q.set("companySizeBucket", bucket);
+      if (bucket !== "all") q.set("companySizeBucket", bucket);
       const res = await fetch(`/api/benchmark?${q.toString()}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.message ?? json.error ?? "Error");
@@ -42,74 +70,94 @@ export default function BenchmarkPage() {
     }
   }
 
+  const gated = hasEntry === false;
+
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Cohort benchmark</h1>
+      <h1 className="text-xl font-semibold">
+        {companyName ? `Sueldos en ${companyName}` : "Benchmarks"}
+      </h1>
       <p className="max-w-prose text-sm text-ink/70">
-        We only show numbers once a cohort (role + seniority + approx. employee headcount) has{" "}
-        <strong>3 or more verified entries</strong>. All historical entries are
-        inflation-adjusted to today's pesos using IPC.
+        Solo mostramos datos cuando una cohorte (rol + seniority + tamaño de empresa) tiene
+        suficientes entradas verificadas. Todos los sueldos históricos se ajustan a pesos de
+        hoy usando el IPC.
       </p>
-      <form onSubmit={submit} className="card space-y-3">
-        <div>
-          <label className="label">Role</label>
-          <input
-            className="input"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            required
-          />
+
+      {gated ? (
+        <div className="card space-y-3">
+          <p className="text-sm text-ink/70">
+            Para ver el benchmark necesitás haber cargado al menos un sueldo verificado.
+          </p>
+          <Link href="/salaries/new" className="btn inline-block">
+            Cargar mi sueldo
+          </Link>
         </div>
-        <div>
-          <label className="label">Seniority</label>
-          <select
-            className="input"
-            value={seniority}
-            onChange={(e) => setSeniority(e.target.value as Seniority)}
-          >
-            {SENIORITIES.map((s) => (
-              <option key={s} value={s}>
-                {formatSeniority(s)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="label">Approx. employee headcount</label>
-          <select
-            className="input"
-            value={bucket}
-            onChange={(e) => setBucket(e.target.value as typeof bucket)}
-          >
-            <option value="auto">Use my company&apos;s headcount</option>
-            {BUCKETS.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button className="btn" type="submit" disabled={loading}>
-          {loading ? "Loading..." : "Compare"}
-        </button>
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      </form>
+      ) : (
+        <form onSubmit={submit} className="card space-y-3">
+          <div>
+            <label className="label">Rol</label>
+            <select
+              className="input"
+              value={role}
+              onChange={(e) => setRole(e.target.value as Role)}
+            >
+              {ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {formatRole(r)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Seniority</label>
+            <select
+              className="input"
+              value={seniority}
+              onChange={(e) => setSeniority(e.target.value as Seniority)}
+            >
+              {SENIORITIES.map((s) => (
+                <option key={s} value={s}>
+                  {formatSeniority(s)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Tamaño de empresa</label>
+            <select
+              className="input"
+              value={bucket}
+              onChange={(e) => setBucket(e.target.value as Bucket)}
+            >
+              <option value="all">Todos los tamaños</option>
+              <option value="auto">El de mi empresa</option>
+              {BUCKETS.map((b) => (
+                <option key={b} value={b}>
+                  {b} empleados
+                </option>
+              ))}
+            </select>
+          </div>
+          <button className="btn" type="submit" disabled={loading}>
+            {loading ? "Cargando..." : "Comparar"}
+          </button>
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        </form>
+      )}
 
       {result ? (
         <div className="card">
           {result.status === "insufficient_data" ? (
             <p className="text-sm">
-              <strong>Not enough entries yet.</strong> We need at least{" "}
-              {result.threshold} verified salaries in this cohort (we have{" "}
-              {result.count}). Add yours to help unlock the benchmark.
+              <strong>Todavía no hay suficientes sueldos verificados para este grupo.</strong>
             </p>
           ) : (
             <dl className="space-y-2 text-sm">
-              <Row label="Entries in cohort" value={`${result.count}`} />
-              <Row label="Adjusted to" value={result.todayMonth ?? ""} />
+              <Row label="Entradas en la cohorte" value={`${result.count}`} />
+              <Row label="Ajustado a" value={result.todayMonth ?? ""} />
               <Row label="p25" value={formatArs(result.p25 ?? 0)} />
-              <Row label="median" value={formatArs(result.p50 ?? 0)} />
-              <Row label="average" value={formatArs(result.avg ?? 0)} />
+              <Row label="mediana" value={formatArs(result.p50 ?? 0)} />
+              <Row label="promedio" value={formatArs(result.avg ?? 0)} />
               <Row label="p95" value={formatArs(result.p95 ?? 0)} />
             </dl>
           )}

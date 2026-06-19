@@ -24,14 +24,14 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
         body: JSON.stringify({ email, password, name: name || undefined }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Signup failed");
+      if (!res.ok) throw new Error(json.error ?? "Error al registrarse");
       const signin = await signIn("credentials", {
         email,
         password,
         redirect: false,
         callbackUrl: "/verify",
       });
-      if (signin?.error) throw new Error("Could not sign you in after signup");
+      if (signin?.error) throw new Error("No se pudo iniciar sesión luego del registro");
       router.push("/verify");
     } catch (err) {
       setError((err as Error).message);
@@ -42,15 +42,15 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-xl font-semibold">Create your Veil account</h1>
+      <h1 className="text-xl font-semibold">Creá tu cuenta en Veil</h1>
       <p className="text-sm text-ink/70">
-        We never publish your identity. Only the domain of your verified work email is visible,
-        and only as a badge.
+        Tu identidad nunca se publica. Solo el dominio de tu email laboral verificado
+        es visible, y únicamente como una insignia de empresa.
       </p>
       <form onSubmit={submit} className="card space-y-3">
         <div>
           <label className="label" htmlFor="email">
-            Personal email
+            Email personal
           </label>
           <input
             id="email"
@@ -63,7 +63,7 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
         </div>
         <div>
           <label className="label" htmlFor="name">
-            Display name (optional)
+            Nombre visible (opcional)
           </label>
           <input
             id="name"
@@ -75,7 +75,7 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
         </div>
         <div>
           <label className="label" htmlFor="password">
-            Password (8+ chars)
+            Contraseña (mínimo 8 caracteres)
           </label>
           <input
             id="password"
@@ -88,7 +88,7 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
           />
         </div>
         <button className="btn" disabled={loading} type="submit">
-          {loading ? "Creating..." : "Sign up"}
+          {loading ? "Creando cuenta..." : "Registrarse"}
         </button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </form>
@@ -98,13 +98,13 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
           className="btn-secondary w-full"
           onClick={() => signIn("google", { callbackUrl: "/verify" })}
         >
-          Continue with Google
+          Continuar con Google
         </button>
       ) : null}
       <p className="text-center text-sm text-ink/70">
-        Already have an account?{" "}
+        ¿Ya tenés cuenta?{" "}
         <Link href="/login" className="underline">
-          Log in
+          Ingresá
         </Link>
       </p>
     </div>

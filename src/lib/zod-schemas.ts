@@ -15,12 +15,17 @@ export const Role = z
   .transform((s) => s.trim().toLowerCase());
 
 export const SalaryEntryInput = z.object({
-  role: Role,
+  role: RoleCategory,
   seniority: Seniority,
-  netArs: z.number().int().positive().max(1_000_000_000_000),
+  netArs: z.number().int().positive().max(100_000_000),
   paymentMonth: z
     .string()
     .regex(/^\d{4}-\d{2}$/, "Expected YYYY-MM")
+    .refine((s) => {
+      const d = new Date();
+      const current = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return s <= current;
+    }, "No se puede cargar un sueldo de un mes futuro")
     .transform((s) => `${s}-01`),
 });
 
@@ -31,13 +36,18 @@ export const CalculatorInput = z.object({
   paymentMonth: z
     .string()
     .regex(/^\d{4}-\d{2}$/)
+    .refine((s) => {
+      const d = new Date();
+      const current = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return s <= current;
+    }, "No se puede calcular para un mes futuro")
     .transform((s) => `${s}-01`),
 });
 
 export const BenchmarkQuery = z.object({
   role: Role,
   seniority: Seniority,
-  companySizeBucket: z.enum(["1-50", "50-200", "200-1000", "1000-5000", "5000+"]).optional(),
+  companySizeBucket: z.enum(["auto", "1-50", "50-200", "200-1000", "1000-5000", "5000+"]).optional(),
 });
 
 export const CompanySalariesQuery = z

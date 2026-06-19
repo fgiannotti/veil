@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
 import { auth } from "@/server/auth";
+import { db } from "@/server/db/client";
+import { salaryEntries } from "@/server/db/schema/data";
 import { getBenchmark } from "@/server/benchmark";
 import { BenchmarkQuery } from "@/lib/zod-schemas";
 import { getCurrentCompany } from "@/server/verification";
@@ -9,6 +12,20 @@ export async function GET(req: Request) {
   const session = await auth();
   if (!session?.profileId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  }
+
+  // Gate: must have at least one salary entry
+  const [ownEntry] = await db
+    .select({ id: salaryEntries.id })
+    .from(salaryEntries)
+    .where(eq(salaryEntries.profileId, session.profileId))
+    .limit(1);
+
+  if (!ownEntry) {
+    return NextResponse.json(
+      { error: "needs_salary_entry", message: "Cargá al menos un sueldo verificado para ver el benchmark." },
+      { status: 403 },
+    );
   }
 
   const url = new URL(req.url);
@@ -21,16 +38,11 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
+  // Resolve bucket: explicit > user's company > none (all sizes)
   let bucket = parsed.data.companySizeBucket;
-  if (!bucket) {
+  if (bucket === "auto") {
     const domain = await getCurrentCompany(session.profileId);
-    if (!domain) {
-      return NextResponse.json(
-        { error: "needs_verification", message: "Verify your work email or pass companySizeBucket" },
-        { status: 403 },
-      );
-    }
-    bucket = getCompanyMeta(domain).sizeBucket;
+    bucket = domain ? getCompanyMeta(domain).sizeBucket : undefined;
   }
 
   const result = await getBenchmark({

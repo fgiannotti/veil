@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Veil",
   description:
-    "Argentina's verified, anonymous source of truth for salaries and real purchasing power.",
+    "La fuente definitiva de sueldos y poder adquisitivo real en Argentina.",
   manifest: "/manifest.json",
 };
 
@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SiteHeader />
           <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
           <footer className="mx-auto max-w-3xl px-4 py-8 text-xs text-ink/50">
-            Veil is anonymous by design. Only your company domain is stored.
+            © Veil {new Date().getFullYear()}
           </footer>
         </AuthProvider>
       </body>

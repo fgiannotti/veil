@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = SignupSchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
   const email = parsed.data.email.toLowerCase().trim();
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     .where(eq(users.email, email))
     .limit(1);
   if (existing) {
-    return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+    return NextResponse.json({ error: "El email ya está registrado" }, { status: 409 });
   }
 
   const passwordHash = await hash(parsed.data.password, 10);

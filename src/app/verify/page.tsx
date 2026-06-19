@@ -10,11 +10,14 @@ export default function VerifyPage() {
   const [code, setCode] = useState("");
   const [domain, setDomain] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [unknownDomain, setUnknownDomain] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [reported, setReported] = useState(false);
 
   async function start(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setUnknownDomain(null);
     setLoading(true);
     try {
       const res = await fetch("/api/verify/start", {
@@ -23,10 +26,31 @@ export default function VerifyPage() {
         body: JSON.stringify({ workEmail }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message ?? json.error ?? "Error");
+      if (!res.ok) {
+        if (json.error === "unknown_domain") {
+          const d = workEmail.split("@")[1] ?? workEmail;
+          setUnknownDomain(d);
+          return;
+        }
+        throw new Error(json.message ?? json.error ?? "Error");
+      }
       setStage("confirm");
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function reportDomain() {
+    setLoading(true);
+    try {
+      await fetch("/api/report-domain", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ workEmail }),
+      });
+      setReported(true);
     } finally {
       setLoading(false);
     }
@@ -55,22 +79,48 @@ export default function VerifyPage() {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-xl font-semibold">Verify your work email</h1>
+      <h1 className="text-xl font-semibold">Verificá tu email laboral</h1>
       <p className="text-sm text-ink/70">
-        We send a 6-digit code to your work email. We only persist the{" "}
-        <strong>domain</strong> (e.g. <code>@globant.com</code>) as your company badge.
-        The full email is discarded once you confirm.
+        Te enviamos un código de 6 dígitos. Solo guardamos el{" "}
+        <strong>dominio</strong> (ej. <code>@globant.com</code>) como tu insignia de empresa.
+        El email completo se descarta una vez confirmado.
       </p>
 
       {domain ? (
         <div className="card text-sm">
-          Verified! Your badge: <strong>@{domain}</strong>. Redirecting…
+          ¡Verificado! Tu insignia: <strong>@{domain}</strong>. Redirigiendo…
+        </div>
+      ) : unknownDomain ? (
+        <div className="card space-y-3">
+          <p className="text-sm">
+            <strong>@{unknownDomain}</strong> no está en nuestra lista de empresas verificadas todavía.
+          </p>
+          {reported ? (
+            <p className="text-sm text-green-600">
+              ¡Solicitud enviada! Te avisamos cuando agreguemos tu empresa.
+            </p>
+          ) : (
+            <button
+              className="btn"
+              disabled={loading}
+              onClick={reportDomain}
+            >
+              {loading ? "Enviando..." : `Solicitar acceso para @${unknownDomain}`}
+            </button>
+          )}
+          <button
+            type="button"
+            className="text-xs text-ink/60 underline"
+            onClick={() => { setUnknownDomain(null); setReported(false); }}
+          >
+            Usar otro email
+          </button>
         </div>
       ) : stage === "start" ? (
         <form onSubmit={start} className="card space-y-3">
           <div>
             <label className="label" htmlFor="workEmail">
-              Work email
+              Email laboral
             </label>
             <input
               id="workEmail"
@@ -83,18 +133,18 @@ export default function VerifyPage() {
             />
           </div>
           <button className="btn" disabled={loading} type="submit">
-            {loading ? "Sending..." : "Send code"}
+            {loading ? "Enviando..." : "Enviar código"}
           </button>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
         </form>
       ) : (
         <form onSubmit={confirm} className="card space-y-3">
           <p className="text-sm text-ink/70">
-            We sent a code to <strong>{workEmail}</strong>.
+            Enviamos un código a <strong>{workEmail}</strong>.
           </p>
           <div>
             <label className="label" htmlFor="code">
-              6-digit code
+              Código de 6 dígitos
             </label>
             <input
               id="code"
@@ -107,14 +157,14 @@ export default function VerifyPage() {
             />
           </div>
           <button className="btn" disabled={loading} type="submit">
-            {loading ? "Verifying..." : "Verify"}
+            {loading ? "Verificando..." : "Verificar"}
           </button>
           <button
             type="button"
             className="text-xs text-ink/60 underline"
             onClick={() => setStage("start")}
           >
-            Use a different work email
+            Usar otro email laboral
           </button>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
         </form>

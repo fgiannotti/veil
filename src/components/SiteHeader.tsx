@@ -17,32 +17,32 @@ export function SiteHeader() {
           {loggedIn ? (
             <>
               <Link href="/dashboard" className="text-ink/70 hover:text-ink">
-                dashboard
+                inicio
               </Link>
               <Link href="/salaries/new" className="text-ink/70 hover:text-ink">
-                add salary
+                cargar sueldo
               </Link>
               <Link href="/benchmark" className="text-ink/70 hover:text-ink">
                 benchmark
               </Link>
               <Link href="/companies" className="text-ink/70 hover:text-ink">
-                companies
+                empresas
               </Link>
               <button
                 className="text-ink/70 hover:text-ink"
                 type="button"
                 onClick={() => signOut({ callbackUrl: "/" })}
               >
-                sign out
+                salir
               </button>
             </>
           ) : (
             <>
               <Link href="/login" className="text-ink/70 hover:text-ink">
-                log in
+                ingresar
               </Link>
               <Link href="/signup" className="btn">
-                sign up
+                registrarse
               </Link>
             </>
           )}
