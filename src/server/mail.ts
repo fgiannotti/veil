@@ -1,13 +1,13 @@
 import nodemailer from "nodemailer";
-
-const DEFAULT_FROM = "Veil <no-reply@veil.com.ar>";
+import { getEnv } from "@/server/env";
 
 let cached: nodemailer.Transporter | null = null;
 
 function smtpTransportOptions() {
-  const host = process.env.SMTP_HOST ?? "localhost";
-  const port = Number(process.env.SMTP_PORT ?? 1025);
-  const explicitSecure = process.env.SMTP_SECURE;
+  const env = getEnv();
+  const host = env.smtpHost;
+  const port = env.smtpPort;
+  const explicitSecure = env.smtpSecure;
 
   const secure =
     explicitSecure === "true"
@@ -17,17 +17,14 @@ function smtpTransportOptions() {
         : port === 465 || port === 2465;
 
   const useTls =
-    host !== "localhost" && (port === 587 || port === 2587 || port === 25);
+    host !== "localhost" && host !== "127.0.0.1" && (port === 587 || port === 2587 || port === 25);
 
   return {
     host,
     port,
     secure,
     ...(useTls ? { requireTLS: true } : {}),
-    auth:
-      process.env.SMTP_USER && process.env.SMTP_PASS
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        : undefined,
+    auth: env.smtpUser && env.smtpPass ? { user: env.smtpUser, pass: env.smtpPass } : undefined,
   };
 }
 
@@ -38,18 +35,18 @@ function transporter() {
 }
 
 export async function sendVerificationCode(to: string, code: string): Promise<void> {
-  const from = process.env.SMTP_FROM ?? DEFAULT_FROM;
+  const from = getEnv().smtpFrom;
   await transporter().sendMail({
     from,
     to,
-    subject: `Your Veil verification code: ${code}`,
-    text: `Your Veil verification code is ${code}. It expires in 10 minutes.
+    subject: "Tu código de verificación de Veil",
+    text: `Tu código de verificación de Veil es ${code}. Expira en 10 minutos.
 
-If you didn't request this, you can safely ignore this email.
+Si no pediste este código, podés ignorar este email.
 
 — Veil`,
-    html: `<p>Your Veil verification code is <strong style="font-size:20px">${code}</strong>.</p>
-<p>It expires in 10 minutes.</p>
-<p style="color:#666;font-size:12px">If you didn't request this, you can ignore this email.</p>`,
+    html: `<p>Tu código de verificación de Veil es <strong style="font-size:20px;letter-spacing:2px">${code}</strong>.</p>
+<p>Expira en 10 minutos.</p>
+<p style="color:#666;font-size:12px">Si no pediste este código, podés ignorar este email.</p>`,
   });
 }

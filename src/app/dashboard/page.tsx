@@ -66,12 +66,26 @@ export default async function DashboardPage() {
         <h2 className="text-lg font-semibold">Tu veil</h2>
         <p className="mt-1 text-sm text-ink/70">
           {domain ? (
-            <>
-              Verificado en <strong>@{domain}</strong>.{" "}
-              <Link href="/verify" className="underline">
-                Cambiar empresa
-              </Link>
-            </>
+            <span className="inline-flex items-center gap-1.5">
+              <svg
+                className="h-4 w-4 shrink-0 text-emerald-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.78-9.72a.75.75 0 00-1.06-1.06L9 10.94 7.28 9.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l4.25-4.25z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>
+                Verificado en <strong>@{domain}</strong>.{" "}
+                <Link href="/verify" className="underline">
+                  Cambiar empresa
+                </Link>
+              </span>
+            </span>
           ) : (
             <>
               Todavía no verificaste un email laboral.{" "}
@@ -125,6 +139,18 @@ export default async function DashboardPage() {
                           </span>
                         )}
                       </div>
+                      {Array.isArray(e.tags) && e.tags.length > 0 ? (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {e.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-full border border-ink/10 bg-ink/5 px-2 py-0.5 text-[10px] text-ink/70"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                     <div className="text-right">
                       <div>{formatArs(Number(e.netArs))}</div>

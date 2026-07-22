@@ -4,6 +4,8 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { GoogleIcon } from "@/components/GoogleIcon";
+import { apiErrorMessage } from "@/lib/api-errors";
 
 export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
@@ -24,7 +26,7 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
         body: JSON.stringify({ email, password, name: name || undefined }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Error al registrarse");
+      if (!res.ok) throw new Error(apiErrorMessage(json, "Error al registrarse"));
       const signin = await signIn("credentials", {
         email,
         password,
@@ -44,8 +46,8 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
     <div className="mx-auto max-w-sm space-y-6">
       <h1 className="text-xl font-semibold">Creá tu cuenta en Veil</h1>
       <p className="text-sm text-ink/70">
-        Tu identidad nunca se publica. Solo el dominio de tu email laboral verificado
-        es visible, y únicamente como una insignia de empresa.
+        Creá una cuenta para verificar tu email laboral y contribuir sueldos verificados.
+        Solo el dominio de tu empresa queda asociado a tus entradas.
       </p>
       <form onSubmit={submit} className="card space-y-3">
         <div>
@@ -95,9 +97,10 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
       {googleEnabled ? (
         <button
           type="button"
-          className="btn-secondary w-full"
+          className="btn-secondary flex w-full items-center justify-center gap-2"
           onClick={() => signIn("google", { callbackUrl: "/verify" })}
         >
+          <GoogleIcon />
           Continuar con Google
         </button>
       ) : null}

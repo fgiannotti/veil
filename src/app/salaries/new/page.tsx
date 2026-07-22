@@ -5,33 +5,48 @@ import { useRouter } from "next/navigation";
 import { parseArsInput } from "@/lib/currency";
 import { formatSeniority, SENIORITIES, type Seniority } from "@/lib/seniority";
 import { ROLES, formatRole, type Role } from "@/lib/roles";
+import { SALARY_LIMITS } from "@/lib/salary-limits";
+import { apiErrorMessage } from "@/lib/api-errors";
+import { currentYearMonth } from "@/lib/dates";
+import { BenefitTagsPicker } from "@/components/BenefitTagsPicker";
+
+const MIN_PAYMENT_MONTH = "2023-01";
+
 export default function NewSalaryPage() {
   const router = useRouter();
-  const [role, setRole] = useState<Role>("developer");
+  const [role, setRole] = useState<Role>("backend");
   const [seniority, setSeniority] = useState<Seniority>("senior");
   const [arsRaw, setArsRaw] = useState("");
-  const currentMonth = (() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  })();
-  const [paymentMonth, setPaymentMonth] = useState(currentMonth);
+  const [paymentMonth, setPaymentMonth] = useState(currentYearMonth);
+  const [tags, setTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const limits = SALARY_LIMITS[seniority];
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
+      const netArs = parseArsInput(arsRaw);
+      if (netArs < limits.min) {
+        throw new Error(`Para ${formatSeniority(seniority)}, el monto es muy bajo.`);
+      }
+      if (netArs > limits.max) {
+        throw new Error(`Para ${formatSeniority(seniority)}, el monto es muy alto.`);
+      }
+
       const res = await fetch("/api/salaries", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           role,
           seniority,
-          netArs: parseArsInput(arsRaw),
+          netArs,
           paymentMonth,
+          tags,
         }),
       });
       const json = await res.json();
@@ -40,7 +55,7 @@ export default function NewSalaryPage() {
           router.push("/verify");
           return;
         }
-        throw new Error(json.message ?? json.error ?? "Error");
+        throw new Error(apiErrorMessage(json));
       }
       if (json.pending) {
         setPending(true);
@@ -67,7 +82,7 @@ export default function NewSalaryPage() {
           <p>
             Esto puede ser completamente válido (por ejemplo, si cambiaste de trabajo),
             pero lo revisamos manualmente para mantener la calidad de los datos.
-            Te avisamos cuando se apruebe.
+            Revisá el estado en tu dashboard.
           </p>
         </div>
         <button className="btn-secondary" onClick={() => router.push("/dashboard")}>
@@ -81,8 +96,8 @@ export default function NewSalaryPage() {
     <div className="mx-auto max-w-md space-y-6">
       <h1 className="text-xl font-semibold">Registrar un sueldo</h1>
       <p className="text-sm text-ink/70">
-        Solo se guarda tu rol, seniority, tamaño aproximado de empresa, monto y mes.
-        Nada de esto se vincula a tu email.
+        Guardamos rol, seniority, monto, mes, beneficios/tags y el dominio de tu email laboral
+        verificado como insignia de empresa.
       </p>
       <form onSubmit={submit} className="card space-y-3">
         <div>
@@ -142,12 +157,15 @@ export default function NewSalaryPage() {
             id="month"
             type="month"
             className="input"
+            lang="es-AR"
             value={paymentMonth}
-            max={currentMonth}
+            min={MIN_PAYMENT_MONTH}
+            max={currentYearMonth()}
             onChange={(e) => setPaymentMonth(e.target.value)}
             required
           />
         </div>
+        <BenefitTagsPicker value={tags} onChange={setTags} />
         <button className="btn" type="submit" disabled={loading}>
           {loading ? "Guardando..." : "Guardar"}
         </button>

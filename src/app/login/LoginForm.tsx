@@ -4,14 +4,21 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { safeCallbackUrl } from "@/lib/safe-callback-url";
+import { GoogleIcon } from "@/components/GoogleIcon";
 
 export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
+  const callbackUrl = safeCallbackUrl(params.get("callbackUrl"));
+  const authError = params.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    authError === "UseCredentials"
+      ? "Esa cuenta usa email y contraseña. Ingresá con tus credenciales."
+      : null,
+  );
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -72,9 +79,10 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
       {googleEnabled ? (
         <button
           type="button"
-          className="btn-secondary w-full"
+          className="btn-secondary flex w-full items-center justify-center gap-2"
           onClick={() => signIn("google", { callbackUrl })}
         >
+          <GoogleIcon />
           Continuar con Google
         </button>
       ) : null}

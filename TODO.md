@@ -1,1 +1,5 @@
-- .
+- [ ] Rotate any secrets that were ever committed (especially Google OAuth)
+- [ ] Set production env per docs/production.md
+- [ ] Apply migrations + refresh indicators
+- [ ] Configure SMTP (Resend) and cron for indicators
+- [ ] Smoke signup → verify → salary → dashboard → company benchmark

@@ -1,6 +1,6 @@
 # Veil
 
-Argentina's verified, anonymous source of truth for salaries and real purchasing power.
+Sueldos verificados y poder adquisitivo real en Argentina.
 
 A Next.js 14 monolith with PostgreSQL. Privacy is enforced by schema separation: auth credentials and salary activity live in different Postgres schemas with no foreign keys between them; they are linked only by an opaque `profile_id` UUID.
 
@@ -82,11 +82,14 @@ tests/              Vitest (inflation, benchmark, verification)
    npm run indicators:refresh   # requires network; seeds IPC + fetches USD Blue
    ```
 
-   Optional benchmark seed data:
+   Optional demo data for local benchmarks (recommended):
 
    ```bash
-   npm run seed:cohort
+   npm run seed:local
    ```
+
+   This inserts synthetic published salaries across Mercado Libre, Globant, etc.
+   so `/benchmark` and company comparisons have enough data (k-anonymity ≥ 3).
 
 4. **Run the app**
 
@@ -130,6 +133,7 @@ Covers the inflation engine math, k-anonymity benchmark logic, and domain/person
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Optional Google OAuth. |
 | `SMTP_HOST/PORT/USER/PASS/FROM` | SMTP for verification codes. Local defaults match MailHog; production uses [Resend](https://resend.com) (see `docs/production.md` §3). |
 | `INDICATORS_REFRESH_TOKEN` | Bearer token required by `POST /api/indicators/refresh`. |
+| `ADMIN_EMAIL` | Login email allowed to use `/admin/reviews`. Empty = admin APIs deny all. |
 | `USD_BLUE_API_URL` | Defaults to `https://api.bluelytics.com.ar/v2/latest`. |
 
 ## Privacy model
@@ -145,14 +149,11 @@ Covers the inflation engine math, k-anonymity benchmark logic, and domain/person
 
 ## Salaries by company
 
-Logged-in users can browse anonymous entries per company domain at `/companies` or via:
+Logged-in users with at least one **published** salary can open `/companies` and jump to `/benchmark?company=<domain>`. That view filters the benchmark cohort by **company domain** (still subject to k-anonymity ≥ 3).
 
 ```
-GET /api/companies/salaries?domain=globant.com&role=...&seniority=...
+GET /api/benchmark?role=...&seniority=...&companyDomain=globant.com
 ```
-
-Returns grouped stats (role, seniority, ranges) with **no profile ids** when the company (or filtered subset) has ≥3 rows. `GET /api/companies` lists the public domains with the most entries (top 12 by count).
-
 ## Indicators
 
 - USD Blue: live, every refresh. Defaults to the public Bluelytics aggregator. Swap via `USD_BLUE_API_URL`.
@@ -169,27 +170,7 @@ Or run locally: `npm run indicators:refresh`.
 
 ## Cold-start seeding (GTM)
 
-`npm run seed:cohort` reads `scripts/data/cohort-2026.01.csv` and inserts one salary entry per mapped response under the sentinel `profile_id`, tagged `source = 'seed:cohort'` and `company_domain = '_seed_cohort'`. Expect ~4.8k inserts. The seed also upserts an `economic_indicators` row for `2026-03-06` at USD blue = 1405 so the seeded entries convert to USD at the reference rate for that month.
-
-Per-row mapping rules:
-
-- `trabajo_de` is matched against an explicit table in `scripts/cohort-csv-import.ts`. Unrecognised job titles are skipped and logged after the run — there is no slug fallback.
-- `seniority` is one of `Junior`/`Semi-Senior`/`Senior` (→ `junior`/`ssr`/`senior`).
-- `cantidad_de_personas_en_tu_organizacion` is binned into the standard Veil buckets (`1-50`, `50-200`, `200-1000`, `1000-5000`, `5000+`).
-- `net_ars` uses the `ultimo_salario_..._neto_en_pesos_argentinos` column; when blank we fall back to `_sal * 0.7` (bruto → net heuristic). Values outside 100k–50M ARS are dropped as obvious typos.
-
-Flags:
-
-```
-npm run seed:cohort                        # default CSV
-SEED_CSV=path/to/other.csv npm run seed:cohort
-npm run seed:cohort -- --json              # small per-entry fixture
-npm run seed:manual-curated                # import scripts/data/manual-curated-entries.json
-```
-
-The script is idempotent — it deletes prior cohort seed rows under the sentinel profile before re-inserting.
-Manual curated entries are also idempotent under `source = 'seed:manual-curated'` and are documented in `scripts/data/manual-curated-entries.json`.
-
+`npm run seed:sysarmy` imports Sysarmy survey data when available under `scripts/`. See script help/flags for details. Seeded rows use a sentinel `profile_id` and tagged `source` values so they can be re-run idempotently.
 ## Out of scope (per spec)
 
 - Direct messaging

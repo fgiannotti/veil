@@ -15,7 +15,10 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = CalculatorInput.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+    return NextResponse.json(
+      { error: "invalid_input", message: "Datos inválidos" },
+      { status: 400 },
+    );
   }
   const { netArs, paymentMonth } = parsed.data;
 
@@ -24,9 +27,9 @@ export async function POST(req: Request) {
   try {
     paymentInd = await indicatorAtOrBefore(paymentMonth);
     todayInd = await latestIndicator();
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: "no_indicators", message: (err as Error).message },
+      { error: "no_indicators", message: "Indicadores económicos no disponibles." },
       { status: 503 },
     );
   }

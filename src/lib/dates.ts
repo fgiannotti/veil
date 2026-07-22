@@ -12,6 +12,11 @@ export function todayFirstOfMonth(): string {
   return firstOfMonth(new Date());
 }
 
+export function currentYearMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export function monthLabel(s: string): string {
   return new Date(s + "T00:00:00Z").toLocaleDateString("es-AR", {
     year: "numeric",

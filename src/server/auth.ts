@@ -8,6 +8,8 @@ import { db } from "@/server/db/client";
 import { users } from "@/server/db/schema/auth";
 import { randomUUID } from "node:crypto";
 import { isGoogleAuthEnabled } from "@/server/auth-config";
+import { getEnv } from "@/server/env";
+import { rateLimit } from "@/server/rate-limit";
 
 export { isGoogleAuthEnabled } from "@/server/auth-config";
 
@@ -25,6 +27,8 @@ declare module "@auth/core/jwt" {
   }
 }
 
+const env = getEnv();
+
 const providers: Provider[] = [
   Credentials({
     name: "credentials",
@@ -36,6 +40,9 @@ const providers: Provider[] = [
       const email = String(creds?.email ?? "").toLowerCase().trim();
       const password = String(creds?.password ?? "");
       if (!email || !password) return null;
+
+      const rl = rateLimit(`login:${email}`, { limit: 10, windowMs: 15 * 60 * 1000 });
+      if (!rl.ok) return null;
 
       const [row] = await db.select().from(users).where(eq(users.email, email)).limit(1);
       if (!row || !row.passwordHash) return null;
@@ -56,24 +63,26 @@ const providers: Provider[] = [
 if (isGoogleAuthEnabled()) {
   providers.push(
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      // Same email may have signed up with password first.
-      allowDangerousEmailAccountLinking: true,
+      clientId: env.googleId,
+      clientSecret: env.googleSecret,
     }),
   );
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  session: { strategy: "jwt" },
+  secret: env.authSecret,
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+  },
+  useSecureCookies: env.isProd,
   pages: {
     signIn: "/login",
   },
   providers,
   callbacks: {
     async signIn({ user, account }) {
-      // For Google sign-in, ensure a users row exists with a stable profile_id.
       if (account?.provider === "google" && user?.email) {
         const email = user.email.toLowerCase();
         const [existing] = await db
@@ -95,6 +104,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .returning();
           (user as { id?: string; profileId?: string }).id = created.id;
           (user as { profileId?: string }).profileId = created.profileId;
+        } else if (existing.passwordHash) {
+          // Prevent takeover: credentials account with same email cannot be claimed via Google.
+          return "/login?error=UseCredentials";
         } else {
           (user as { id?: string; profileId?: string }).id = existing.id;
           (user as { profileId?: string }).profileId = existing.profileId;
@@ -108,7 +120,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (u.id) token.uid = u.id;
         if (u.profileId) token.profileId = u.profileId;
       }
-      // Backfill profileId if missing (e.g. very first Google flow)
       if (!token.profileId && token.email) {
         const [row] = await db
           .select({ id: users.id, profileId: users.profileId })

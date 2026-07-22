@@ -5,13 +5,13 @@ import { workEmailVerifications } from "@/server/db/schema/auth";
 import { companyBadges } from "@/server/db/schema/data";
 import { extractDomain, isPersonalDomain, isKnownDomain } from "@/server/companies/domains";
 import { sendVerificationCode } from "@/server/mail";
+import { getEnv } from "@/server/env";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
 function hashEmail(email: string): string {
-  const secret = process.env.AUTH_SECRET ?? "dev-secret";
-  return createHmac("sha256", secret).update(email.toLowerCase().trim()).digest("hex");
+  return createHmac("sha256", getEnv().authSecret).update(email.toLowerCase().trim()).digest("hex");
 }
 
 function hashCode(code: string): string {
@@ -85,7 +85,13 @@ export async function confirmVerification(
   const email = workEmail.toLowerCase().trim();
   const domain = extractDomain(email);
   if (!domain || isPersonalDomain(domain)) {
-    throw new VerificationError("invalid_email", "Invalid work email");
+    throw new VerificationError("invalid_email", "Email laboral inválido");
+  }
+  if (!isKnownDomain(domain)) {
+    throw new VerificationError(
+      "unknown_domain",
+      `El dominio @${domain} no está en nuestra lista de empresas verificadas.`,
+    );
   }
 
   const emailHash = hashEmail(email);

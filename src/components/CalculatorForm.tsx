@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { RealWageChart } from "./RealWageChart";
 import { formatArs, formatUsd, parseArsInput } from "@/lib/currency";
+import { apiErrorMessage } from "@/lib/api-errors";
+import { currentYearMonth } from "@/lib/dates";
+
+const MIN_PAYMENT_MONTH = "2023-01";
 
 interface Breakdown {
   netArs: number;
@@ -24,11 +28,7 @@ interface Result {
 
 export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
   const [arsRaw, setArsRaw] = useState("500000");
-  const currentMonth = (() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  })();
-  const [month, setMonth] = useState(currentMonth);
+  const [month, setMonth] = useState(currentYearMonth);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -47,7 +47,7 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message ?? json.error ?? "Error");
+      if (!res.ok) throw new Error(apiErrorMessage(json));
       setResult(json);
     } catch (err) {
       setError((err as Error).message);
@@ -80,8 +80,10 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
             id="month"
             type="month"
             className="input"
+            lang="es-AR"
             value={month}
-            max={currentMonth}
+            min={MIN_PAYMENT_MONTH}
+            max={currentYearMonth()}
             onChange={(e) => setMonth(e.target.value)}
           />
         </div>

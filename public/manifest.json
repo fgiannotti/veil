@@ -1,7 +1,7 @@
 {
   "name": "Veil",
   "short_name": "Veil",
-  "description": "Argentina's verified, anonymous salary truth.",
+  "description": "Sueldos verificados y poder adquisitivo real en Argentina.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fafaf9",

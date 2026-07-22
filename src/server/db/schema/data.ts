@@ -43,6 +43,7 @@ export const salaryEntries = dataSchema.table(
     companySizeBucket: text("company_size_bucket").notNull(),
     netArs: bigint("net_ars", { mode: "number" }).notNull(),
     paymentMonth: date("payment_month").notNull(),
+    tags: text("tags").array().notNull().default([]),
     source: text("source").default("user").notNull(),
     status: text("status").default("published").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -57,6 +58,19 @@ export const salaryEntries = dataSchema.table(
     ),
     profileIdx: index("salary_profile_idx").on(t.profileId, t.paymentMonth),
     statusIdx: index("salary_status_idx").on(t.status),
+  }),
+);
+
+export const benefitTags = dataSchema.table(
+  "benefit_tags",
+  {
+    slug: text("slug").primaryKey(),
+    label: text("label").notNull(),
+    useCount: integer("use_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    byUse: index("benefit_tags_use_count_idx").on(t.useCount),
   }),
 );
 

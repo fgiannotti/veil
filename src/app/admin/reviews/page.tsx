@@ -5,6 +5,7 @@ import { formatArs } from "@/lib/currency";
 import { formatRole } from "@/lib/roles";
 import { formatSeniority } from "@/lib/seniority";
 import { monthLabel } from "@/lib/dates";
+import { apiErrorMessage } from "@/lib/api-errors";
 
 interface Entry {
   id: string;
@@ -25,7 +26,7 @@ export default function ReviewsPage() {
     fetch("/api/admin/reviews")
       .then((r) => r.json())
       .then((j) => {
-        if (j.error) setError(j.error);
+        if (j.error) setError(apiErrorMessage(j));
         else setEntries(j.entries);
       })
       .catch(() => setError("Error al cargar"));
@@ -48,7 +49,7 @@ export default function ReviewsPage() {
   if (error) {
     return (
       <div className="mx-auto max-w-2xl py-8">
-        <p className="text-red-600">{error === "forbidden" ? "Acceso denegado." : error}</p>
+        <p className="text-red-600">{error}</p>
       </div>
     );
   }

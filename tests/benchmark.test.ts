@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   buildBenchmark,
+  buildCompanyComparison,
+  buildGaussianCurve,
   K_ANONYMITY_THRESHOLD,
   percentile,
+  rankCompanyMedian,
+  rankTopBenefits,
 } from "../src/server/benchmark";
 import type { IndicatorRow } from "../src/server/inflation";
 
@@ -36,7 +40,7 @@ const indicatorFor = (m: string): IndicatorRow => {
 };
 
 const cohort = {
-  role: "backend developer",
+  role: "backend",
   seniority: "senior",
   companySizeBucket: "5000+",
 };
@@ -61,7 +65,7 @@ describe("buildBenchmark", () => {
       indicatorFor,
     );
     expect(res.status).toBe("insufficient_data");
-    expect(res.count).toBe(1);
+    expect(res.count).toBe(0);
     expect(res.threshold).toBe(K_ANONYMITY_THRESHOLD);
     expect(res.avg).toBeUndefined();
   });
@@ -77,7 +81,7 @@ describe("buildBenchmark", () => {
       indicatorFor,
     );
     expect(res.status).toBe("insufficient_data");
-    expect(res.count).toBe(2);
+    expect(res.count).toBe(0);
   });
 
   it("returns ok with 3 entries (at threshold)", () => {
@@ -114,5 +118,55 @@ describe("buildBenchmark", () => {
     const expected = (100_000 * 12512) / 7522;
     expect(res.avg).toBeCloseTo(expected, 1);
     expect(res.p50).toBeCloseTo(expected, 1);
+  });
+});
+
+describe("company market comparison", () => {
+  it("ranks higher medians better", () => {
+    const { rank, total, percentile: pct } = rankCompanyMedian(
+      [1_000_000, 2_000_000, 3_000_000],
+      3_000_000,
+    );
+    expect(rank).toBe(1);
+    expect(total).toBe(3);
+    expect(pct).toBe(100);
+  });
+
+  it("builds a gaussian curve and marks the focus company", () => {
+    const medians = new Map([
+      ["a.com", 1_000_000],
+      ["b.com", 2_000_000],
+      ["c.com", 3_000_000],
+    ]);
+    const res = buildCompanyComparison(medians, "c.com", "Company C");
+    expect(res.status).toBe("ok");
+    expect(res.rank).toBe(1);
+    expect(res.companyMedian).toBe(3_000_000);
+    expect(res.curve?.length).toBeGreaterThan(10);
+    expect(buildGaussianCurve([1, 2, 3]).length).toBe(48);
+  });
+
+  it("returns insufficient_data below company threshold", () => {
+    const medians = new Map([
+      ["a.com", 1_000_000],
+      ["b.com", 2_000_000],
+    ]);
+    const res = buildCompanyComparison(medians, "a.com", "A");
+    expect(res.status).toBe("insufficient_data");
+  });
+});
+
+describe("rankTopBenefits", () => {
+  it("returns the five most frequent tags", () => {
+    const ranked = rankTopBenefits([
+      ["Remoto", "Prepaga"],
+      ["Remoto", "Híbrido"],
+      ["remoto", "Sueldo en USD"],
+      ["Prepaga", "Bono anual"],
+      ["Híbrido"],
+    ]);
+    expect(ranked[0]?.label.toLowerCase()).toBe("remoto");
+    expect(ranked[0]?.count).toBe(3);
+    expect(ranked.length).toBeLessThanOrEqual(5);
   });
 });

@@ -8,8 +8,12 @@ export default function CompaniesPage() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Empresas verificadas</h1>
       <p className="text-sm text-ink/70">
-        Estas son las empresas cuyos dominios están habilitados para verificación.
-        Hacé click en una para ver el benchmark de sueldos de esa empresa.
+        Elegí una empresa para ver su mediana y en qué lugar queda frente al resto del mercado.
+        Para el agregado de todas las empresas, usá{" "}
+        <Link href="/benchmark" className="underline">
+          la vista general
+        </Link>
+        .
       </p>
       <ul className="divide-y divide-ink/10">
         {companies.map((c) => (

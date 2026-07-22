@@ -1,20 +1,9 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db/client";
-import { users } from "@/server/db/schema/auth";
 import { salaryEntries } from "@/server/db/schema/data";
-
-async function isAdmin(profileId: string): Promise<boolean> {
-  const adminEmail = process.env.ADMIN_EMAIL;
-  if (!adminEmail) return false;
-  const [row] = await db
-    .select({ email: users.email })
-    .from(users)
-    .where(eq(users.profileId, profileId))
-    .limit(1);
-  return row?.email === adminEmail;
-}
+import { isAdmin } from "@/server/admin";
 
 export async function GET() {
   const session = await auth();
@@ -23,10 +12,20 @@ export async function GET() {
   }
 
   const rows = await db
-    .select()
+    .select({
+      id: salaryEntries.id,
+      role: salaryEntries.role,
+      seniority: salaryEntries.seniority,
+      companyDomain: salaryEntries.companyDomain,
+      companySizeBucket: salaryEntries.companySizeBucket,
+      netArs: salaryEntries.netArs,
+      paymentMonth: salaryEntries.paymentMonth,
+      status: salaryEntries.status,
+      createdAt: salaryEntries.createdAt,
+    })
     .from(salaryEntries)
     .where(eq(salaryEntries.status, "pending"))
-    .orderBy(salaryEntries.createdAt);
+    .orderBy(asc(salaryEntries.createdAt));
 
   return NextResponse.json({ entries: rows });
 }

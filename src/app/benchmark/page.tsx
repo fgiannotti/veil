@@ -3,23 +3,48 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { formatArs } from "@/lib/currency";
+import { formatArs, formatUsd } from "@/lib/currency";
 import { formatSeniority, SENIORITIES, type Seniority } from "@/lib/seniority";
 import { ROLES, formatRole, type Role } from "@/lib/roles";
 import tier1 from "@/server/companies/tier1.json";
+import { apiErrorMessage } from "@/lib/api-errors";
+import { SalaryDistributionChart } from "@/components/SalaryDistributionChart";
 
 const BUCKETS = ["1-50", "50-200", "200-1000", "1000-5000", "5000+"] as const;
 type Bucket = (typeof BUCKETS)[number] | "auto" | "all";
+type SeniorityFilter = Seniority | "all";
+
+interface Comparison {
+  status: "ok" | "insufficient_data";
+  threshold: number;
+  companyName?: string;
+  companyMedian?: number;
+  companyMedianUsd?: number;
+  marketMedian?: number;
+  marketMedianUsd?: number;
+  rank?: number;
+  companiesCompared?: number;
+  percentile?: number;
+  curve?: { salary: number; density: number }[];
+  usdBlueSell?: number;
+}
 
 interface Result {
   status: "ok" | "insufficient_data";
-  count: number;
   threshold: number;
+  basis?: "net";
   avg?: number;
   p25?: number;
   p50?: number;
   p95?: number;
+  avgUsd?: number;
+  p25Usd?: number;
+  p50Usd?: number;
+  p95Usd?: number;
   todayMonth?: string;
+  usdBlueSell?: number;
+  comparison?: Comparison;
+  topBenefits?: { label: string; count: number }[];
 }
 
 export default function BenchmarkPage() {
@@ -33,13 +58,14 @@ export default function BenchmarkPage() {
 function BenchmarkContent() {
   const params = useSearchParams();
   const companyDomain = params.get("company");
-  const companyMeta = companyDomain ? (tier1 as Record<string, { name: string; sizeBucket: Bucket }>)[companyDomain] : null;
+  const companyMeta = companyDomain
+    ? (tier1 as Record<string, { name: string; sizeBucket: Bucket }>)[companyDomain]
+    : null;
   const companyName = companyMeta?.name ?? null;
-  const initialBucket = companyMeta?.sizeBucket ?? "all";
 
-  const [role, setRole] = useState<Role>("developer");
-  const [seniority, setSeniority] = useState<Seniority>("senior");
-  const [bucket, setBucket] = useState<Bucket>(initialBucket);
+  const [role, setRole] = useState<Role>("backend");
+  const [seniority, setSeniority] = useState<SeniorityFilter>("senior");
+  const [bucket, setBucket] = useState<Bucket>("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -48,20 +74,25 @@ function BenchmarkContent() {
   useEffect(() => {
     fetch("/api/salaries")
       .then((r) => r.json())
-      .then((j) => setHasEntry(Array.isArray(j.entries) && j.entries.length > 0))
+      .then((j) => setHasEntry(Boolean(j.hasPublishedEntry)))
       .catch(() => setHasEntry(false));
   }, []);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const q = new URLSearchParams({ role, seniority });
-      if (bucket !== "all") q.set("companySizeBucket", bucket);
+      const q = new URLSearchParams({ role });
+      if (seniority !== "all") q.set("seniority", seniority);
+      if (companyDomain) {
+        q.set("companyDomain", companyDomain);
+      } else if (bucket !== "all") {
+        q.set("companySizeBucket", bucket);
+      }
       const res = await fetch(`/api/benchmark?${q.toString()}`);
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message ?? json.error ?? "Error");
+      if (!res.ok) throw new Error(apiErrorMessage(json));
       setResult(json);
     } catch (err) {
       setError((err as Error).message);
@@ -71,17 +102,34 @@ function BenchmarkContent() {
   }
 
   const gated = hasEntry === false;
+  const comparison = result?.comparison;
+  const topBenefits = result?.topBenefits ?? [];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">
-        {companyName ? `Sueldos en ${companyName}` : "Benchmarks"}
-      </h1>
-      <p className="max-w-prose text-sm text-ink/70">
-        Solo mostramos datos cuando una cohorte (rol + seniority + tamaño de empresa) tiene
-        suficientes entradas verificadas. Todos los sueldos históricos se ajustan a pesos de
-        hoy usando el IPC.
-      </p>
+      <div className="space-y-2">
+        <h1 className="text-xl font-semibold">
+          {companyName ? `Sueldos en ${companyName}` : "Vista general de sueldos"}
+        </h1>
+        <p className="max-w-prose text-sm text-ink/70">
+          {companyName
+            ? `Mediana de ${companyName} para el rol elegido, y su posición frente a otras empresas con datos suficientes. Los sueldos históricos se actualizan usando el IPC.`
+            : "Agregado de sueldos netos de todas las empresas verificadas. Filtrá por rol y, si querés, por seniority o tamaño. Los históricos se actualizan con IPC."}
+        </p>
+        {companyName ? (
+          <p className="text-sm">
+            <Link href="/benchmark" className="underline text-ink/70 hover:text-ink">
+              ← Volver a la vista general
+            </Link>
+          </p>
+        ) : (
+          <p className="text-sm">
+            <Link href="/companies" className="underline text-ink/70 hover:text-ink">
+              Ver por empresa →
+            </Link>
+          </p>
+        )}
+      </div>
 
       {gated ? (
         <div className="card space-y-3">
@@ -109,12 +157,13 @@ function BenchmarkContent() {
             </select>
           </div>
           <div>
-            <label className="label">Seniority</label>
+            <label className="label">Seniority (opcional)</label>
             <select
               className="input"
               value={seniority}
-              onChange={(e) => setSeniority(e.target.value as Seniority)}
+              onChange={(e) => setSeniority(e.target.value as SeniorityFilter)}
             >
+              <option value="all">Todos</option>
               {SENIORITIES.map((s) => (
                 <option key={s} value={s}>
                   {formatSeniority(s)}
@@ -122,56 +171,206 @@ function BenchmarkContent() {
               ))}
             </select>
           </div>
-          <div>
-            <label className="label">Tamaño de empresa</label>
-            <select
-              className="input"
-              value={bucket}
-              onChange={(e) => setBucket(e.target.value as Bucket)}
-            >
-              <option value="all">Todos los tamaños</option>
-              <option value="auto">El de mi empresa</option>
-              {BUCKETS.map((b) => (
-                <option key={b} value={b}>
-                  {b} empleados
-                </option>
-              ))}
-            </select>
-          </div>
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Cargando..." : "Comparar"}
+          {!companyDomain ? (
+            <div>
+              <label className="label">Tamaño de empresa (opcional)</label>
+              <select
+                className="input"
+                value={bucket}
+                onChange={(e) => setBucket(e.target.value as Bucket)}
+              >
+                <option value="all">Todos los tamaños</option>
+                <option value="auto">El de mi empresa</option>
+                {BUCKETS.map((b) => (
+                  <option key={b} value={b}>
+                    {b} empleados
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <p className="text-xs text-ink/60">
+              Comparando <code>@{companyDomain}</code> contra el resto del mercado
+            </p>
+          )}
+          <button className="btn self-start" type="submit" disabled={loading}>
+            {loading ? "Cargando..." : companyDomain ? "Comparar empresa" : "Ver mercado"}
           </button>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
         </form>
       )}
 
       {result ? (
-        <div className="card">
+        <div className="space-y-4">
           {result.status === "insufficient_data" ? (
-            <p className="text-sm">
-              <strong>Todavía no hay suficientes sueldos verificados para este grupo.</strong>
-            </p>
+            <div className="card">
+              <p className="text-sm">
+                <strong>
+                  {companyName
+                    ? `Todavía no hay suficientes sueldos verificados en ${companyName} para este filtro.`
+                    : "Todavía no hay suficientes sueldos verificados para este grupo."}
+                </strong>
+              </p>
+            </div>
           ) : (
-            <dl className="space-y-2 text-sm">
-              <Row label="Entradas en la cohorte" value={`${result.count}`} />
-              <Row label="Ajustado a" value={result.todayMonth ?? ""} />
-              <Row label="p25" value={formatArs(result.p25 ?? 0)} />
-              <Row label="mediana" value={formatArs(result.p50 ?? 0)} />
-              <Row label="promedio" value={formatArs(result.avg ?? 0)} />
-              <Row label="p95" value={formatArs(result.p95 ?? 0)} />
-            </dl>
+            <div className="card space-y-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-sm font-medium text-ink">
+                  Sueldo <span className="underline decoration-ink/30">neto</span>
+                  {companyName ? ` · ${companyName}` : " · mercado"}
+                </p>
+                <p className="text-xs text-ink/50">
+                  Ajustado IPC
+                  {result.todayMonth ? ` · ${result.todayMonth.slice(0, 7)}` : ""}
+                  {result.usdBlueSell
+                    ? ` · blue $${Math.round(result.usdBlueSell).toLocaleString("es-AR")}`
+                    : ""}
+                </p>
+              </div>
+
+              <StatTile
+                label="Mediana"
+                ars={result.p50 ?? 0}
+                usd={result.p50Usd}
+                emphasize
+              />
+
+              <div className="grid grid-cols-3 gap-2">
+                <StatTile label="p25" ars={result.p25 ?? 0} usd={result.p25Usd} />
+                <StatTile label="Promedio" ars={result.avg ?? 0} usd={result.avgUsd} />
+                <StatTile label="p95" ars={result.p95 ?? 0} usd={result.p95Usd} />
+              </div>
+            </div>
           )}
+
+          {companyDomain && topBenefits.length > 0 ? (
+            <div className="card space-y-2">
+              <h2 className="text-base font-semibold">Beneficios más reportados</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {topBenefits.map((b) => (
+                  <span
+                    key={b.label}
+                    className="inline-flex rounded-full border border-ink/15 bg-ink/[0.04] px-2.5 py-1 text-xs font-medium text-ink/80"
+                  >
+                    {b.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {companyDomain && comparison ? (
+            <div className="card space-y-3">
+              <h2 className="text-base font-semibold">Posición vs otras empresas</h2>
+              {comparison.status === "insufficient_data" ? (
+                <p className="text-sm text-ink/70">
+                  Todavía no hay suficientes empresas con datos para armar la comparación
+                  (mínimo {comparison.threshold}).
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {comparison.rank != null && comparison.companiesCompared != null ? (
+                      <MiniStat
+                        label="Ranking"
+                        value={`#${comparison.rank}`}
+                        hint={`de ${comparison.companiesCompared}`}
+                      />
+                    ) : null}
+                    {comparison.percentile != null ? (
+                      <MiniStat
+                        label="Percentil"
+                        value={`${comparison.percentile}%`}
+                        hint="mejor o igual"
+                      />
+                    ) : null}
+                    {comparison.companyMedian != null ? (
+                      <StatTile
+                        label={comparison.companyName ?? "Empresa"}
+                        ars={comparison.companyMedian}
+                        usd={comparison.companyMedianUsd}
+                      />
+                    ) : null}
+                    {comparison.marketMedian != null ? (
+                      <StatTile
+                        label="Mercado"
+                        ars={comparison.marketMedian}
+                        usd={comparison.marketMedianUsd}
+                      />
+                    ) : null}
+                  </div>
+                  {comparison.companyMedian == null ? (
+                    <p className="text-sm text-ink/70">
+                      Esta empresa aún no tiene suficientes entradas propias para marcarla en
+                      la curva, pero sí hay mercado suficiente.
+                    </p>
+                  ) : null}
+                  {comparison.curve?.length ? (
+                    <div>
+                      <p className="mb-2 text-xs text-ink/60">
+                        Distribución de medianas netas por empresa
+                      </p>
+                      <SalaryDistributionChart
+                        curve={comparison.curve}
+                        companyMedian={comparison.companyMedian}
+                        companyLabel={comparison.companyName ?? "Esta empresa"}
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function StatTile({
+  label,
+  ars,
+  usd,
+  emphasize = false,
+}: {
+  label: string;
+  ars: number;
+  usd?: number;
+  emphasize?: boolean;
+}) {
   return (
-    <div className="flex items-baseline justify-between">
-      <dt className="text-xs uppercase tracking-wide text-ink/60">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+    <div
+      className={
+        emphasize
+          ? "rounded-md border border-ink/15 bg-ink/[0.03] px-3 py-2.5"
+          : "rounded-md border border-ink/10 px-2.5 py-2"
+      }
+    >
+      <div className="text-[10px] font-medium uppercase tracking-wide text-ink/50">{label}</div>
+      <div className={emphasize ? "mt-0.5 text-lg font-semibold" : "mt-0.5 text-sm font-semibold"}>
+        {formatArs(ars)}
+      </div>
+      <div className="text-xs text-ink/55">
+        {usd != null ? `${formatUsd(usd)} blue` : "neto"}
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-md border border-ink/10 px-2.5 py-2">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-ink/50">{label}</div>
+      <div className="mt-0.5 text-sm font-semibold">{value}</div>
+      {hint ? <div className="text-xs text-ink/55">{hint}</div> : null}
     </div>
   );
 }

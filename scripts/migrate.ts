@@ -3,6 +3,16 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Pool } from "pg";
 
+function redactDatabaseUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.password) u.password = "***";
+    return u.toString();
+  } catch {
+    return "[invalid-database-url]";
+  }
+}
+
 async function main() {
   const url = process.env.DATABASE_URL ?? "postgres://veil:veil@localhost:5432/veil";
   const pool = new Pool({ connectionString: url });
@@ -12,7 +22,7 @@ async function main() {
     .filter((f) => f.endsWith(".sql"))
     .sort();
 
-  console.log(`Applying ${files.length} migration(s) to ${url}`);
+  console.log(`Applying ${files.length} migration(s) to ${redactDatabaseUrl(url)}`);
 
   for (const file of files) {
     const sql = readFileSync(join(dir, file), "utf8");

@@ -7,8 +7,12 @@ import { getCurrentCompany } from "@/server/verification";
 import { getCompanyMeta } from "@/server/companies/domains";
 import { SalaryEntryInput } from "@/lib/zod-schemas";
 import { SALARY_LIMITS } from "@/lib/salary-limits";
+import { formatSeniority } from "@/lib/seniority";
+import { clientIp, rateLimit, rateLimitedResponse } from "@/server/rate-limit";
+import { normalizeTagList } from "@/lib/benefit-tags";
+import { upsertBenefitTags } from "@/server/tags";
 
-const MAX_ENTRIES_PER_MONTH = 2;
+const MAX_ENTRIES_PER_MONTH = 1;
 
 export async function GET() {
   const session = await auth();
@@ -17,12 +21,25 @@ export async function GET() {
   }
 
   const rows = await db
-    .select()
+    .select({
+      id: salaryEntries.id,
+      role: salaryEntries.role,
+      seniority: salaryEntries.seniority,
+      companyDomain: salaryEntries.companyDomain,
+      companySizeBucket: salaryEntries.companySizeBucket,
+      netArs: salaryEntries.netArs,
+      paymentMonth: salaryEntries.paymentMonth,
+      tags: salaryEntries.tags,
+      status: salaryEntries.status,
+      createdAt: salaryEntries.createdAt,
+    })
     .from(salaryEntries)
     .where(eq(salaryEntries.profileId, session.profileId))
     .orderBy(desc(salaryEntries.paymentMonth));
 
-  return NextResponse.json({ entries: rows });
+  const hasPublishedEntry = rows.some((r) => r.status === "published");
+
+  return NextResponse.json({ entries: rows, hasPublishedEntry });
 }
 
 export async function POST(req: Request) {
@@ -31,11 +48,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
 
+  const rl = rateLimit(`salaries:${session.profileId}`, { limit: 20, windowMs: 60 * 60 * 1000 });
+  if (!rl.ok) {
+    const { body, init } = rateLimitedResponse(rl.retryAfterSec);
+    return NextResponse.json(body, init);
+  }
+
+  const ipRl = rateLimit(`salaries-ip:${clientIp(req)}`, { limit: 40, windowMs: 60 * 60 * 1000 });
+  if (!ipRl.ok) {
+    const { body, init } = rateLimitedResponse(ipRl.retryAfterSec);
+    return NextResponse.json(body, init);
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = SalaryEntryInput.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "invalid_input", details: parsed.error.flatten() },
+      { error: "invalid_input", message: "Datos inválidos", details: parsed.error.flatten() },
       { status: 400 },
     );
   }
@@ -48,7 +77,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Max 2 entries per month
   const [{ value: countForMonth }] = await db
     .select({ value: count() })
     .from(salaryEntries)
@@ -61,28 +89,36 @@ export async function POST(req: Request) {
 
   if (countForMonth >= MAX_ENTRIES_PER_MONTH) {
     return NextResponse.json(
-      { error: "duplicate_entry", message: `Ya cargaste ${MAX_ENTRIES_PER_MONTH} sueldos para ese mes.` },
+      {
+        error: "duplicate_entry",
+        message: "Ya cargaste un sueldo para ese mes.",
+      },
       { status: 409 },
     );
   }
 
-  // Salary limits per seniority
   const limits = SALARY_LIMITS[parsed.data.seniority];
+  const seniorityLabel = formatSeniority(parsed.data.seniority);
+
   if (parsed.data.netArs < limits.min) {
     return NextResponse.json(
-      { error: "salary_out_of_range", message: "Ese monto está por debajo de los valores esperados para esta posición." },
+      {
+        error: "salary_too_low",
+        message: `Para ${seniorityLabel}, el monto es muy bajo.`,
+      },
       { status: 400 },
     );
   }
   if (parsed.data.netArs > limits.max) {
     return NextResponse.json(
-      { error: "salary_out_of_range", message: "Ese monto está por encima de los valores esperados para esta posición." },
+      {
+        error: "salary_too_high",
+        message: `Para ${seniorityLabel}, el monto es muy alto.`,
+      },
       { status: 400 },
     );
   }
 
-  // Temporal consistency check: if there's any published entry from a later month
-  // with a higher amount, the new entry looks suspicious → pending review.
   const laterHigherEntries = await db
     .select({ id: salaryEntries.id })
     .from(salaryEntries)
@@ -97,8 +133,8 @@ export async function POST(req: Request) {
     .limit(1);
 
   const status = laterHigherEntries.length > 0 ? "pending" : "published";
-
   const meta = getCompanyMeta(domain);
+  const normalized = normalizeTagList(parsed.data.tags ?? []);
 
   await db.insert(salaryEntries).values({
     profileId: session.profileId,
@@ -108,9 +144,14 @@ export async function POST(req: Request) {
     companySizeBucket: meta.sizeBucket,
     netArs: parsed.data.netArs,
     paymentMonth: parsed.data.paymentMonth,
+    tags: normalized.map((t) => t.label),
     source: "user",
     status,
   });
+
+  if (normalized.length > 0) {
+    await upsertBenefitTags(normalized);
+  }
 
   return NextResponse.json({ ok: true, pending: status === "pending" });
 }
