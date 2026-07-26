@@ -15,7 +15,9 @@
     "indicators:refresh": "tsx scripts/refresh-indicators.ts",
     "mail:test": "tsx scripts/test-smtp.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -32,6 +34,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.1",
     "@types/nodemailer": "^6.4.17",

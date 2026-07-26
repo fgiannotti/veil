@@ -61,8 +61,8 @@ export default function NewSalaryPage() {
         setPending(true);
         return;
       }
-      router.refresh();
       router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       setError((err as Error).message);
     } finally {

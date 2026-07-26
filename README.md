@@ -123,6 +123,21 @@ npm test
 
 Covers the inflation engine math, k-anonymity benchmark logic, and domain/personal-email helpers — pure functions, no DB required.
 
+### End-to-end (Playwright)
+
+Smoke journey: signup → work-email verify (via MailHog) → publish salary → dashboard.
+
+Prerequisites: Postgres + MailHog on the ports in `.env` (SMTP `1025`, UI `8025`). Without Docker, run `tools/MailHog.exe` (global setup starts it automatically if that binary exists).
+
+```bash
+npm run test:e2e        # headless
+npm run test:e2e:ui     # interactive UI
+```
+
+Reuses an already-running `npm run dev` when not in CI.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs unit tests and this e2e smoke on every push/PR to `main`, with Postgres 16 + MailHog service containers.
+
 ## Env vars
 
 | Var | Purpose |

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     if (err instanceof VerificationError) {
       return NextResponse.json({ error: err.code, message: err.message }, { status: 400 });
     }
-    console.error("verify/start failed");
+    console.error("verify/start failed", err);
     return NextResponse.json({ error: "internal" }, { status: 500 });
   }
 }

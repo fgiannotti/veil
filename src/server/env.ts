@@ -76,6 +76,8 @@ export function getEnv(): AppEnv {
 export function assertProdEnv(): void {
   if (!isProd) return;
   if (process.argv.includes("build")) return;
+  // Playwright CI boots `next start` against local Postgres + MailHog.
+  if (process.env.VEIL_E2E === "1") return;
 
   const env = getEnv();
   const problems: string[] = [];
