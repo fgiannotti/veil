@@ -7,10 +7,14 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.AUTH_URL ?? "https://veil.com.ar"),
   title: "Veil",
   description:
     "La fuente definitiva de sueldos y poder adquisitivo real en Argentina.",
   manifest: "/manifest.json",
+  verification: {
+    google: "oaX3VpGzdsV7_UR7LbnqaIXq1NhvH0Z1etjT3T4JYNU",
+  },
 };
 
 export const viewport: Viewport = {
