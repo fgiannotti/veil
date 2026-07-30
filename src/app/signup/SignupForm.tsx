@@ -44,7 +44,7 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-xl font-semibold">Creá tu cuenta en Veil</h1>
+      <h1 className="text-xl font-semibold">Creá tu cuenta en Bench</h1>
       <p className="text-sm text-ink/70">
         Creá una cuenta para verificar tu email laboral y contribuir sueldos verificados.
         Solo el dominio de tu empresa queda asociado a tus entradas.

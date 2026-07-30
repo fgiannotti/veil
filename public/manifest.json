@@ -1,6 +1,6 @@
 {
-  "name": "Veil",
-  "short_name": "Veil",
+  "name": "Bench",
+  "short_name": "Bench",
   "description": "Sueldos verificados y poder adquisitivo real en Argentina.",
   "start_url": "/",
   "display": "standalone",

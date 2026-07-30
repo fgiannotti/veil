@@ -1,4 +1,4 @@
-# Veil
+# Bench
 
 Sueldos verificados y poder adquisitivo real en Argentina.
 
@@ -59,8 +59,8 @@ tests/              Vitest (inflation, benchmark, verification)
    Google OAuth is optional for email/password, but required for “Continue with Google”:
 
    1. [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → **Credentials** → **Create OAuth client ID** (Web application).
-   2. **Authorized JavaScript origins:** `http://localhost:3000` (and `https://veil.com.ar` in production).
-   3. **Authorized redirect URIs:** `http://localhost:3000/api/auth/callback/google` (and `https://veil.com.ar/api/auth/callback/google` in production).
+   2. **Authorized JavaScript origins:** `http://localhost:3000` (and `https://bench.com.ar` in production).
+   3. **Authorized redirect URIs:** `http://localhost:3000/api/auth/callback/google` (and `https://bench.com.ar/api/auth/callback/google` in production).
    4. Copy **Client ID** (ends with `.apps.googleusercontent.com`) → `AUTH_GOOGLE_ID`. Copy **Client secret** → `AUTH_GOOGLE_SECRET`. Do not put the redirect URI in `AUTH_GOOGLE_ID`.
    5. Set the same values in `.env` or `.env.local` (not only `.env.example`).
    6. If the app is in **Testing**, add your Google account under OAuth consent screen → **Test users**.
@@ -72,7 +72,7 @@ tests/              Vitest (inflation, benchmark, verification)
    docker compose up -d
    ```
 
-   Wait until `veil_db` is healthy (`docker compose ps`), then:
+   Wait until `bench_db` is healthy (`docker compose ps`), then:
 
 3. **Install dependencies and prepare the database**
 
@@ -106,7 +106,7 @@ tests/              Vitest (inflation, benchmark, verification)
 | Issue | Fix |
 | --- | --- |
 | Docker daemon not running | Start Docker Desktop, then retry `docker compose up -d`. |
-| `ECONNREFUSED` on migrate | Ensure `docker compose up -d` finished and `veil_db` is healthy. |
+| `ECONNREFUSED` on migrate | Ensure `docker compose up -d` finished and `bench_db` is healthy. |
 | Port 5432 already allocated | Stop other Postgres or change the published port in `docker-compose.yml` and `DATABASE_URL`. |
 | Google sign-in fails | Leave OAuth vars empty and use credentials, or configure a Google OAuth client with redirect `http://localhost:3000/api/auth/callback/google`. |
 | `indicators:refresh` fails | Check network access to `USD_BLUE_API_URL` (default: Bluelytics). |

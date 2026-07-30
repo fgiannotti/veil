@@ -1,6 +1,6 @@
 # Production launch guide
 
-Checklist and runbook for putting Veil on the public internet.
+Checklist and runbook for putting Bench on the public internet.
 
 ## 1. Hosting options
 
@@ -28,7 +28,7 @@ Required in production (`NODE_ENV=production`):
 | --- | --- |
 | `DATABASE_URL` | Postgres URL with SSL |
 | `AUTH_SECRET` | Long random; also used to HMAC work-email hashes |
-| `AUTH_URL` | Public `https://` origin, e.g. `https://veil.com.ar` |
+| `AUTH_URL` | Public `https://` origin, e.g. `https://bench.com.ar` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_FROM` | Not localhost |
 | `SMTP_USER` / `SMTP_PASS` | Required for Resend |
 | `INDICATORS_REFRESH_TOKEN` | Bearer for indicators cron |

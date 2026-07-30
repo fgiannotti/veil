@@ -1,27 +1,27 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: veil_db
+    container_name: bench_db
     environment:
-      POSTGRES_USER: veil
-      POSTGRES_PASSWORD: veil
-      POSTGRES_DB: veil
+      POSTGRES_USER: bench
+      POSTGRES_PASSWORD: bench
+      POSTGRES_DB: bench
     ports:
       - "5433:5432"
     volumes:
-      - veil_pgdata:/var/lib/postgresql/data
+      - bench_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U veil -d veil"]
+      test: ["CMD-SHELL", "pg_isready -U bench -d bench"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   mail:
     image: mailhog/mailhog:latest
-    container_name: veil_mail
+    container_name: bench_mail
     ports:
       - "1025:1025"
       - "8025:8025"
 
 volumes:
-  veil_pgdata:
+  bench_pgdata:

@@ -39,13 +39,13 @@ export async function sendVerificationCode(to: string, code: string): Promise<vo
   await transporter().sendMail({
     from,
     to,
-    subject: "Tu código de verificación de Veil",
-    text: `Tu código de verificación de Veil es ${code}. Expira en 10 minutos.
+    subject: "Tu código de verificación de Bench",
+    text: `Tu código de verificación de Bench es ${code}. Expira en 10 minutos.
 
 Si no pediste este código, podés ignorar este email.
 
-— Veil`,
-    html: `<p>Tu código de verificación de Veil es <strong style="font-size:20px;letter-spacing:2px">${code}</strong>.</p>
+— Bench`,
+    html: `<p>Tu código de verificación de Bench es <strong style="font-size:20px;letter-spacing:2px">${code}</strong>.</p>
 <p>Expira en 10 minutos.</p>
 <p style="color:#666;font-size:12px">Si no pediste este código, podés ignorar este email.</p>`,
   });

@@ -26,7 +26,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       ...process.env,
-      ...(process.env.CI ? { VEIL_E2E: "1" } : {}),
+      ...(process.env.CI ? { BENCH_E2E: "1" } : {}),
     },
   },
 });

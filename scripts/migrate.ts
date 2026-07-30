@@ -14,7 +14,7 @@ function redactDatabaseUrl(url: string): string {
 }
 
 async function main() {
-  const url = process.env.DATABASE_URL ?? "postgres://veil:veil@localhost:5432/veil";
+  const url = process.env.DATABASE_URL ?? "postgres://bench:bench@localhost:5432/bench";
   const pool = new Pool({ connectionString: url });
 
   const dir = join(process.cwd(), "drizzle");

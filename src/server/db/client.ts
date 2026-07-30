@@ -7,19 +7,19 @@ const { databaseUrl, isProd } = getEnv();
 
 declare global {
   // eslint-disable-next-line no-var
-  var __veilPool: Pool | undefined;
+  var __benchPool: Pool | undefined;
 }
 
 // Prefer `?sslmode=require` (or equivalent) on DATABASE_URL for managed Postgres.
 export const pool: Pool =
-  global.__veilPool ??
+  global.__benchPool ??
   new Pool({
     connectionString: databaseUrl,
     max: 10,
   });
 
 if (!isProd) {
-  global.__veilPool = pool;
+  global.__benchPool = pool;
 }
 
 export const db = drizzle(pool);

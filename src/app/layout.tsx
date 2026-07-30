@@ -7,8 +7,8 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.AUTH_URL ?? "https://veil.com.ar"),
-  title: "Veil",
+  metadataBase: new URL(process.env.AUTH_URL ?? "https://bench.com.ar"),
+  title: "Bench",
   description:
     "La fuente definitiva de sueldos y poder adquisitivo real en Argentina.",
   manifest: "/manifest.json",
@@ -33,7 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SiteHeader />
           <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
           <footer className="mx-auto max-w-3xl px-4 py-8 text-xs text-ink/50">
-            © Veil {new Date().getFullYear()}
+            © Bench {new Date().getFullYear()}
           </footer>
         </AuthProvider>
       </body>

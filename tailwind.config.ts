@@ -6,7 +6,7 @@ export default {
     extend: {
       colors: {
         ink: "#0b0b0f",
-        veil: "#5b5bd6",
+        bench: "#5b5bd6",
       },
     },
   },

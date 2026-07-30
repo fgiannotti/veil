@@ -6,7 +6,7 @@ export default {
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgres://veil:veil@localhost:5432/veil",
+    url: process.env.DATABASE_URL ?? "postgres://bench:bench@localhost:5432/bench",
   },
   schemaFilter: ["auth", "data"],
   verbose: true,

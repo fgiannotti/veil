@@ -11,7 +11,7 @@ export function SiteHeader() {
     <header className="border-b border-ink/10 bg-white">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
         <Link href="/" className="font-semibold tracking-tight text-ink">
-          veil
+          bench
         </Link>
         <nav className="flex items-center gap-3 text-sm">
           {loggedIn ? (

@@ -53,14 +53,14 @@ export function getEnv(): AppEnv {
 
   cached = {
     isProd,
-    databaseUrl: v.DATABASE_URL ?? "postgres://veil:veil@localhost:5432/veil",
+    databaseUrl: v.DATABASE_URL ?? "postgres://bench:bench@localhost:5432/bench",
     authSecret: v.AUTH_SECRET ?? "dev-secret",
     authUrl: v.AUTH_URL,
     smtpHost: v.SMTP_HOST ?? "localhost",
     smtpPort: Number(v.SMTP_PORT ?? 1025),
     smtpUser: v.SMTP_USER || undefined,
     smtpPass: v.SMTP_PASS || undefined,
-    smtpFrom: v.SMTP_FROM ?? "Veil <no-reply@veil.com.ar>",
+    smtpFrom: v.SMTP_FROM ?? "Bench <no-reply@bench.com.ar>",
     smtpSecure: v.SMTP_SECURE,
     indicatorsRefreshToken: v.INDICATORS_REFRESH_TOKEN,
     adminEmail: v.ADMIN_EMAIL || undefined,
@@ -77,7 +77,7 @@ export function assertProdEnv(): void {
   if (!isProd) return;
   if (process.argv.includes("build")) return;
   // Playwright CI boots `next start` against local Postgres + MailHog.
-  if (process.env.VEIL_E2E === "1") return;
+  if (process.env.BENCH_E2E === "1") return;
 
   const env = getEnv();
   const problems: string[] = [];

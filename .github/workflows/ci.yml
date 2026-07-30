@@ -33,13 +33,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: veil
-          POSTGRES_PASSWORD: veil
-          POSTGRES_DB: veil
+          POSTGRES_USER: bench
+          POSTGRES_PASSWORD: bench
+          POSTGRES_DB: bench
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U veil -d veil"
+          --health-cmd "pg_isready -U bench -d bench"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -52,13 +52,13 @@ jobs:
 
     env:
       CI: true
-      VEIL_E2E: "1"
-      DATABASE_URL: postgres://veil:veil@localhost:5432/veil
+      BENCH_E2E: "1"
+      DATABASE_URL: postgres://bench:bench@localhost:5432/bench
       AUTH_SECRET: ci-e2e-secret-not-for-production
       AUTH_URL: http://localhost:3000
       SMTP_HOST: localhost
       SMTP_PORT: "1025"
-      SMTP_FROM: "Veil <no-reply@veil.com.ar>"
+      SMTP_FROM: "Bench <no-reply@bench.com.ar>"
       MAILHOG_API_URL: http://localhost:8025
       PLAYWRIGHT_BASE_URL: http://localhost:3000
 

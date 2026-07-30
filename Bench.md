@@ -1,4 +1,4 @@
-# **Veil (MVP)**
+# **Bench (MVP)**
 
 **Vision:** To become Argentina's definitive source of truth for salaries and workplace culture by providing professional transparency in a high-inflation environment.
 
@@ -8,13 +8,13 @@
 
 **"Verified professional anonymity with a real-time purchasing power engine."**
 
-Unlike global platforms, **Veil** is built specifically for the Argentine context. Glassdoor lacks local economic scope, LinkedIn incentivizes performative positivity, and Reddit lacks anonymity. Veil provides the inflation-adjusted data workers need to negotiate effectively, accessible only to verified professionals. The social network proposal is very similar to Blind.
+Unlike global platforms, **Bench** is built specifically for the Argentine context. Glassdoor lacks local economic scope, LinkedIn incentivizes performative positivity, and Reddit lacks anonymity. Bench provides the inflation-adjusted data workers need to negotiate effectively, accessible only to verified professionals. The social network proposal is very similar to Blind.
 
 ---
 
 ## **2\. Core User Stories**
 
-### **A. Identity & Trust ("The Veil")**
+### **A. Identity & Trust**
 
 * **Sign Up / Login:** As a user, I can create an account via email/password or Google OAuth to maintain a persistent credential and access my history.  
 * **Work Email Verification:** As a user, I must verify a current work email (e.g., @globant.com) to prove my employment. The system sends a one-time code and, upon confirmation, persists only the company domain as a badge on my profile. **The full email is discarded immediately after verification.**  
@@ -77,4 +77,3 @@ To solve the "Cold-Start" problem (users needing data to contribute data):
 2. **Community-First Launch:** Target the Sysarmy Slack/Discord and Argentine tech Twitter communities as the primary distribution channels.  
 3. **Standalone Hook:** Market the IPC/Blue salary calculator as a free utility. Use the traffic from the calculator to convert visitors into verified contributors.  
    
-

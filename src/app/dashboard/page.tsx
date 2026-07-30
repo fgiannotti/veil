@@ -63,7 +63,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <section className="card">
-        <h2 className="text-lg font-semibold">Tu veil</h2>
+        <h2 className="text-lg font-semibold">Tu bench</h2>
         <p className="mt-1 text-sm text-ink/70">
           {domain ? (
             <span className="inline-flex items-center gap-1.5">
