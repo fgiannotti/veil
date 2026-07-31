@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { RealWageChart } from "./RealWageChart";
+import { MonthInput } from "./MonthInput";
 import { formatArs, formatUsd, parseArsInput } from "@/lib/currency";
 import { apiErrorMessage } from "@/lib/api-errors";
 import { currentYearMonth } from "@/lib/dates";
@@ -77,15 +78,12 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
           <label className="label" htmlFor="month">
             Mes cobrado
           </label>
-          <input
+          <MonthInput
             id="month"
-            type="month"
-            className="input"
-            lang="es-AR"
             value={month}
             min={MIN_PAYMENT_MONTH}
             max={currentYearMonth()}
-            onChange={(e) => setMonth(e.target.value)}
+            onChange={setMonth}
           />
         </div>
         <button className="btn" type="submit" disabled={loading}>
@@ -110,7 +108,7 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
           <Row label="ARS neto al cobro" value={formatArs(result.breakdown.netArs)} />
           <Row
             label="USD Blue al cobro"
-            value={`${formatUsd(result.breakdown.usdValueAtPayment)} (a ${result.breakdown.usdBlueAtPayment.toLocaleString("es-AR")} ARS/USD)`}
+            value={`${formatUsd(result.breakdown.usdValueAtPayment)} (blue ${formatArs(result.breakdown.usdBlueAtPayment)}/USD)`}
           />
           <Row
             label="USD Blue hoy"

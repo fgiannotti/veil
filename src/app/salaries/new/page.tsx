@@ -9,6 +9,7 @@ import { SALARY_LIMITS } from "@/lib/salary-limits";
 import { apiErrorMessage } from "@/lib/api-errors";
 import { currentYearMonth } from "@/lib/dates";
 import { BenefitTagsPicker } from "@/components/BenefitTagsPicker";
+import { MonthInput } from "@/components/MonthInput";
 import { OnboardingSteps } from "@/components/OnboardingSteps";
 import {
   hasOnboardingPrefill,
@@ -179,16 +180,13 @@ function NewSalaryPageInner() {
           <label className="label" htmlFor="month">
             Mes de pago
           </label>
-          <input
+          <MonthInput
             id="month"
-            type="month"
-            className="input"
-            lang="es-AR"
             value={paymentMonth}
             min={MIN_PAYMENT_MONTH}
             max={currentYearMonth()}
-            onChange={(e) => setPaymentMonth(e.target.value)}
             required
+            onChange={setPaymentMonth}
           />
         </div>
         <BenefitTagsPicker value={tags} onChange={setTags} />
