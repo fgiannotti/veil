@@ -131,7 +131,7 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
             {loggedIn ? (
               <>
                 <p className="text-sm text-ink/70">
-                  Registrá este sueldo para desbloquear el benchmark de tu cohorte.
+                  Registrá este sueldo para desbloquear los benchmarks.
                 </p>
                 <Link
                   href={withOnboardingPrefill("/salaries/new", {
@@ -154,7 +154,7 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
               <>
                 <p className="text-sm text-ink/70">
                   Creá una cuenta para seguir la evolución de tu sueldo real y
-                  compararte con tu cohorte.
+                  compararte con los benchmarks.
                 </p>
                 <Link
                   href={withOnboardingPrefill("/signup", {

@@ -150,7 +150,7 @@ function BenchmarkContent() {
               El benchmark se desbloquea con un sueldo publicado
             </p>
             <p className="mt-1 text-sm text-ink/70">
-              Así protegemos la anonimidad: solo quien aporta datos puede ver la cohorte.
+              Así protegemos la anonimidad: solo quien aporta datos puede ver los benchmarks.
             </p>
           </div>
           <ol className="space-y-2 text-sm">
@@ -176,7 +176,7 @@ function BenchmarkContent() {
             />
             <ChecklistItem
               done={false}
-              label="Ver el benchmark de tu cohorte"
+              label="Compararte con los benchmarks"
               hint="Disponible cuando el sueldo esté publicado"
             />
           </ol>

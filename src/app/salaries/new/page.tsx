@@ -122,7 +122,7 @@ function NewSalaryPageInner() {
         <h1 className="text-xl font-semibold">Registrar un sueldo</h1>
         <p className="mt-2 text-sm text-ink/70">
           {fromOnboarding
-            ? "Usamos el monto de la calculadora como punto de partida. Completá rol y seniority para compararte con tu cohorte."
+            ? "Usamos el monto de la calculadora como punto de partida. Completá rol y seniority para compararte con los benchmarks."
             : "Guardamos rol, seniority, monto, mes, beneficios/tags y el dominio de tu email laboral verificado como insignia de empresa."}
         </p>
       </div>
