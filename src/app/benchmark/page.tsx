@@ -9,6 +9,7 @@ import { ROLES, formatRole, type Role } from "@/lib/roles";
 import tier1 from "@/server/companies/tier1.json";
 import { apiErrorMessage } from "@/lib/api-errors";
 import { SalaryDistributionChart } from "@/components/SalaryDistributionChart";
+import { OnboardingSteps } from "@/components/OnboardingSteps";
 
 const BUCKETS = ["1-50", "50-200", "200-1000", "1000-5000", "5000+"] as const;
 type Bucket = (typeof BUCKETS)[number] | "auto" | "all";
@@ -70,12 +71,22 @@ function BenchmarkContent() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [hasEntry, setHasEntry] = useState<boolean | null>(null);
+  const [verified, setVerified] = useState<boolean | null>(null);
+  const [hasPending, setHasPending] = useState(false);
 
   useEffect(() => {
     fetch("/api/salaries")
       .then((r) => r.json())
-      .then((j) => setHasEntry(Boolean(j.hasPublishedEntry)))
-      .catch(() => setHasEntry(false));
+      .then((j) => {
+        setHasEntry(Boolean(j.hasPublishedEntry));
+        setVerified(Boolean(j.verified));
+        setHasPending(Boolean(j.hasPendingEntry));
+      })
+      .catch(() => {
+        setHasEntry(false);
+        setVerified(false);
+        setHasPending(false);
+      });
   }, []);
 
   async function submit(e?: React.FormEvent) {
@@ -132,13 +143,43 @@ function BenchmarkContent() {
       </div>
 
       {gated ? (
-        <div className="card space-y-3">
-          <p className="text-sm text-ink/70">
-            Para ver el benchmark necesitás haber cargado al menos un sueldo verificado.
-          </p>
-          <Link href="/salaries/new" className="btn inline-block">
-            Cargar mi sueldo
-          </Link>
+        <div className="card space-y-4">
+          <OnboardingSteps current={verified ? 3 : 2} />
+          <div>
+            <p className="text-sm font-medium text-ink">
+              El benchmark se desbloquea con un sueldo publicado
+            </p>
+            <p className="mt-1 text-sm text-ink/70">
+              Así protegemos la anonimidad: solo quien aporta datos puede ver la cohorte.
+            </p>
+          </div>
+          <ol className="space-y-2 text-sm">
+            <ChecklistItem
+              done={verified === true}
+              label="Verificá tu email laboral"
+              hint={verified ? "Empresa vinculada" : "Probá tu dominio de trabajo"}
+              href={verified ? undefined : "/verify"}
+              cta="Verificar"
+            />
+            <ChecklistItem
+              done={false}
+              label="Publicá al menos un sueldo"
+              hint={
+                hasPending
+                  ? "Tenés una entrada en revisión; el benchmark se abre cuando se apruebe."
+                  : verified
+                    ? "Rol, seniority, monto y mes"
+                    : "Primero completá la verificación"
+              }
+              href={verified ? "/salaries/new" : undefined}
+              cta="Cargar sueldo"
+            />
+            <ChecklistItem
+              done={false}
+              label="Ver el benchmark de tu cohorte"
+              hint="Disponible cuando el sueldo esté publicado"
+            />
+          </ol>
         </div>
       ) : (
         <form onSubmit={submit} className="card space-y-3">
@@ -324,6 +365,44 @@ function BenchmarkContent() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function ChecklistItem({
+  done,
+  label,
+  hint,
+  href,
+  cta,
+}: {
+  done: boolean;
+  label: string;
+  hint: string;
+  href?: string;
+  cta?: string;
+}) {
+  return (
+    <li className="flex items-start gap-3 rounded-md border border-ink/10 px-3 py-2.5">
+      <span
+        className={
+          done
+            ? "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink"
+            : "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-ink/25"
+        }
+        aria-hidden
+      />
+      <div className="min-w-0 flex-1">
+        <p className={done ? "font-medium text-ink/60 line-through" : "font-medium text-ink"}>
+          {label}
+        </p>
+        <p className="text-xs text-ink/55">{hint}</p>
+        {href && cta && !done ? (
+          <Link href={href} className="mt-2 inline-block text-xs font-medium underline">
+            {cta} →
+          </Link>
+        ) : null}
+      </div>
+    </li>
   );
 }
 

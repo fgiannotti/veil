@@ -1,11 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { apiErrorMessage } from "@/lib/api-errors";
+import { OnboardingSteps } from "@/components/OnboardingSteps";
+import {
+  hasOnboardingPrefill,
+  readOnboardingPrefill,
+  withOnboardingPrefill,
+} from "@/lib/onboarding";
 
 export default function VerifyPage() {
+  return (
+    <Suspense>
+      <VerifyPageInner />
+    </Suspense>
+  );
+}
+
+function VerifyPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prefill = readOnboardingPrefill(searchParams);
+  const nextAfterVerify = hasOnboardingPrefill(prefill)
+    ? withOnboardingPrefill("/salaries/new", prefill)
+    : "/salaries/new";
+
   const [workEmail, setWorkEmail] = useState("");
   const [stage, setStage] = useState<"start" | "confirm">("start");
   const [code, setCode] = useState("");
@@ -100,7 +120,7 @@ export default function VerifyPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(apiErrorMessage(json));
       setDomain(json.domain);
-      setTimeout(() => router.push("/dashboard"), 1200);
+      setTimeout(() => router.push(nextAfterVerify), 1200);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -110,25 +130,43 @@ export default function VerifyPage() {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-xl font-semibold">Verificá tu email laboral</h1>
-      <p className="text-sm text-ink/70">
-        Te enviamos un código de 6 dígitos. Solo guardamos el{" "}
-        <strong>dominio</strong> (ej. <code>@globant.com</code>) como tu insignia de empresa.
-        El email completo se descarta una vez confirmado.
-      </p>
+      <OnboardingSteps current={2} />
+      <div>
+        <h1 className="text-xl font-semibold">Verificá tu email laboral</h1>
+        <p className="mt-2 text-sm text-ink/70">
+          {stage === "confirm"
+            ? (
+              <>
+                Te enviamos un código de 6 dígitos. Solo guardamos el{" "}
+                <strong>dominio</strong> (ej. <code>@globant.com</code>) como tu
+                insignia de empresa. El email completo se descarta una vez confirmado.
+              </>
+            )
+            : (
+              <>
+                Usá tu email de trabajo. Solo guardamos el <strong>dominio</strong>{" "}
+                (ej. <code>@globant.com</code>) como insignia. El email completo se
+                descarta al confirmar.
+              </>
+            )}
+        </p>
+      </div>
 
       {domain ? (
         <div className="card text-sm">
-          ¡Verificado! Tu insignia: <strong>@{domain}</strong>. Redirigiendo…
+          ¡Verificado! Tu insignia: <strong>@{domain}</strong>. Siguiente: cargar tu
+          sueldo…
         </div>
       ) : unknownDomain ? (
         <div className="card space-y-3">
           <p className="text-sm">
-            <strong>@{unknownDomain}</strong> no está en nuestra lista de empresas verificadas todavía.
+            <strong>@{unknownDomain}</strong> no está en nuestra lista de empresas
+            verificadas todavía.
           </p>
           {reported ? (
             <p className="text-sm text-green-600">
-              ¡Solicitud enviada! Te avisamos cuando agreguemos tu empresa.
+              Solicitud enviada. Mientras tanto podés probar con otro email laboral
+              de una empresa ya listada.
             </p>
           ) : (
             <button
@@ -143,7 +181,11 @@ export default function VerifyPage() {
           <button
             type="button"
             className="block text-xs text-ink/60 underline"
-            onClick={() => { setUnknownDomain(null); setReported(false); setError(null); }}
+            onClick={() => {
+              setUnknownDomain(null);
+              setReported(false);
+              setError(null);
+            }}
           >
             Usar otro email
           </button>

@@ -6,6 +6,7 @@ import { RealWageChart } from "./RealWageChart";
 import { formatArs, formatUsd, parseArsInput } from "@/lib/currency";
 import { apiErrorMessage } from "@/lib/api-errors";
 import { currentYearMonth } from "@/lib/dates";
+import { withOnboardingPrefill } from "@/lib/onboarding";
 
 const MIN_PAYMENT_MONTH = "2023-01";
 
@@ -128,20 +129,59 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
             <p className="label">Valor mensual en USD de ese sueldo</p>
             <RealWageChart data={result.chart} />
           </div>
-          <p className="text-xs text-ink/50">
+          <div className="space-y-2 border-t border-ink/10 pt-4">
             {loggedIn ? (
               <>
-                <Link href="/dashboard" className="underline hover:text-ink">
-                  Abrí tu panel
-                </Link>{" "}
-                para registrar sueldos y compararte con tu cohorte.
+                <p className="text-sm text-ink/70">
+                  Registrá este sueldo para desbloquear el benchmark de tu cohorte.
+                </p>
+                <Link
+                  href={withOnboardingPrefill("/salaries/new", {
+                    netArs: String(Math.round(result.breakdown.netArs)),
+                    month: result.breakdown.paymentMonth.slice(0, 7),
+                  })}
+                  className="btn inline-block"
+                >
+                  Cargar este sueldo
+                </Link>
+                <p className="text-xs text-ink/50">
+                  O{" "}
+                  <Link href="/dashboard" className="underline hover:text-ink">
+                    abrí tu panel
+                  </Link>
+                  .
+                </p>
               </>
             ) : (
               <>
-                Registrate para seguir la evolución de tu sueldo real y compararte con tu cohorte.
+                <p className="text-sm text-ink/70">
+                  Creá una cuenta para seguir la evolución de tu sueldo real y
+                  compararte con tu cohorte.
+                </p>
+                <Link
+                  href={withOnboardingPrefill("/signup", {
+                    netArs: String(Math.round(result.breakdown.netArs)),
+                    month: result.breakdown.paymentMonth.slice(0, 7),
+                  })}
+                  className="btn inline-block"
+                >
+                  Creá tu cuenta
+                </Link>
+                <p className="text-xs text-ink/50">
+                  ¿Ya tenés cuenta?{" "}
+                  <Link
+                    href={withOnboardingPrefill("/login", {
+                      netArs: String(Math.round(result.breakdown.netArs)),
+                      month: result.breakdown.paymentMonth.slice(0, 7),
+                    })}
+                    className="underline hover:text-ink"
+                  >
+                    Ingresá
+                  </Link>
+                </p>
               </>
             )}
-          </p>
+          </div>
         </div>
       ) : null}
     </div>
