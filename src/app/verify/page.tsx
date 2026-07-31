@@ -132,7 +132,10 @@ function VerifyPageInner() {
     <div className="mx-auto max-w-sm space-y-6">
       <OnboardingSteps current={2} />
       <div>
-        <h1 className="text-xl font-semibold">Verificá tu email laboral</h1>
+        <p className="text-xs font-medium uppercase tracking-wide text-ink/50">
+          {stage === "confirm" ? "Paso 2 de 2" : "Paso 1 de 2"}
+        </p>
+        <h1 className="mt-1 text-xl font-semibold">Verificá tu email laboral</h1>
         <p className="mt-2 text-sm text-ink/70">
           {stage === "confirm"
             ? (

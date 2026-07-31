@@ -16,6 +16,7 @@ import { formatSeniority } from "@/lib/seniority";
 import { formatRole } from "@/lib/roles";
 import { monthLabel } from "@/lib/dates";
 import { RealWageChart } from "@/components/RealWageChart";
+import { SalaryEntryActions, SalaryStatusBadge } from "@/components/SalaryEntryActions";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,7 @@ export default async function DashboardPage() {
   const chart =
     today && entries.length > 0
       ? entries
+          .filter((e) => e.status === "published")
           .slice()
           .reverse()
           .map((e) => {
@@ -133,11 +135,7 @@ export default async function DashboardPage() {
                       <div className="font-medium">{monthLabel(e.paymentMonth)}</div>
                       <div className="text-xs text-ink/60">
                         {formatRole(e.role)} · {formatSeniority(e.seniority)}
-                        {e.status === "pending" && (
-                          <span className="ml-2 rounded bg-amber-100 px-1 py-0.5 text-amber-700">
-                            en revisión
-                          </span>
-                        )}
+                        <SalaryStatusBadge status={e.status} />
                       </div>
                       {Array.isArray(e.tags) && e.tags.length > 0 ? (
                         <div className="mt-1.5 flex flex-wrap gap-1">
@@ -151,6 +149,7 @@ export default async function DashboardPage() {
                           ))}
                         </div>
                       ) : null}
+                      <SalaryEntryActions id={e.id} status={e.status} />
                     </div>
                     <div className="text-right">
                       <div>{formatArs(Number(e.netArs))}</div>

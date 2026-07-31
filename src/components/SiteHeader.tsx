@@ -17,7 +17,7 @@ export function SiteHeader() {
           {loggedIn ? (
             <>
               <Link href="/dashboard" className="text-ink/70 hover:text-ink">
-                inicio
+                mi panel
               </Link>
               <Link href="/salaries/new" className="text-ink/70 hover:text-ink">
                 cargar sueldo
@@ -38,6 +38,9 @@ export function SiteHeader() {
             </>
           ) : (
             <>
+              <Link href="/companies" className="text-ink/70 hover:text-ink">
+                empresas
+              </Link>
               <Link href="/login" className="text-ink/70 hover:text-ink">
                 ingresar
               </Link>

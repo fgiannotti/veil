@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const PROTECTED = ["/dashboard", "/verify", "/salaries", "/benchmark", "/companies", "/admin"];
+const PROTECTED = ["/dashboard", "/verify", "/salaries", "/benchmark", "/admin"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -17,7 +17,7 @@ export async function middleware(req: NextRequest) {
 
   if (!token) {
     const login = new URL("/login", req.url);
-    login.searchParams.set("callbackUrl", pathname);
+    login.searchParams.set("callbackUrl", `${pathname}${req.nextUrl.search}`);
     return NextResponse.redirect(login);
   }
 
@@ -25,5 +25,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/verify", "/salaries/:path*", "/benchmark", "/companies", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/verify", "/salaries/:path*", "/benchmark", "/admin/:path*"],
 };
