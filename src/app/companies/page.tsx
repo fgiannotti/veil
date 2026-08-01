@@ -5,7 +5,9 @@ import { listKnownCompanies } from "@/server/companies/domains";
 export default async function CompaniesPage() {
   const session = await auth();
   const loggedIn = Boolean(session?.profileId);
-  const companies = listKnownCompanies().sort((a, b) => a.name.localeCompare(b.name));
+  const companies = (await listKnownCompanies()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
   return (
     <div className="space-y-6">

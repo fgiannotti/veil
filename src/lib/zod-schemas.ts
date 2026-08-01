@@ -68,8 +68,8 @@ export const CompanySalariesQuery = z
     role: RoleCategory.optional(),
     seniority: Seniority.optional(),
   })
-  .transform((data) => {
-    const domain = resolveCompanyQuery(data.company);
+  .transform(async (data) => {
+    const domain = await resolveCompanyQuery(data.company);
     if (!domain) {
       throw new z.ZodError([
         {

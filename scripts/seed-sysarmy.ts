@@ -45,7 +45,7 @@ async function main() {
   let skippedRows = 0;
 
   for (const [companyKey, rows] of Object.entries(data.companies)) {
-    const company = resolveKnownCompany(companyKey);
+    const company = await resolveKnownCompany(companyKey);
     if (!company) {
       console.warn(`Skipping unknown company group: ${companyKey} (${rows.length} row(s))`);
       skippedCompanies++;

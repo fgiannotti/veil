@@ -139,7 +139,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     .limit(1);
 
   const status = laterHigherEntries.length > 0 ? "pending" : "published";
-  const meta = getCompanyMeta(domain);
+  const meta = await getCompanyMeta(domain);
   const normalized = normalizeTagList(parsed.data.tags ?? []);
 
   await db

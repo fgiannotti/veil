@@ -16,6 +16,7 @@ export { isGoogleAuthEnabled } from "@/server/auth-config";
 declare module "next-auth" {
   interface Session {
     profileId: string;
+    isAdmin?: boolean;
     user: { id: string } & DefaultSession["user"];
   }
 }
@@ -138,6 +139,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.uid && session.user) {
         (session.user as { id?: string }).id = token.uid;
       }
+      const adminEmail = env.adminEmail;
+      const userEmail = session.user?.email?.toLowerCase();
+      session.isAdmin = Boolean(
+        adminEmail && userEmail && userEmail === adminEmail.toLowerCase(),
+      );
       return session;
     },
   },

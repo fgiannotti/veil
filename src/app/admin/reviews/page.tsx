@@ -47,19 +47,15 @@ export default function ReviewsPage() {
   }
 
   if (error) {
-    return (
-      <div className="mx-auto max-w-2xl py-8">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
+    return <p className="text-red-600">{error}</p>;
   }
 
   if (!entries) {
-    return <div className="mx-auto max-w-2xl py-8 text-sm text-ink/60">Cargando…</div>;
+    return <p className="text-sm text-ink/60">Cargando…</p>;
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <h1 className="text-xl font-semibold">Revisión de sueldos</h1>
       {entries.length === 0 ? (
         <p className="text-sm text-ink/60">No hay entradas pendientes.</p>

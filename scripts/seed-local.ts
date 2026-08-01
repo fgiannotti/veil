@@ -94,7 +94,7 @@ async function main() {
   const tagUse = new Map<string, { label: string; count: number }>();
 
   for (const company of COMPANIES) {
-    const meta = getCompanyMeta(company.domain);
+    const meta = await getCompanyMeta(company.domain);
 
     for (const role of DEMO_ROLES) {
       for (const seniority of DEMO_SENIORITIES) {

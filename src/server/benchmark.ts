@@ -384,10 +384,11 @@ async function getCompanyMarketComparison(input: BenchmarkInput): Promise<Compan
     medians.set(domain, percentile(sorted, 0.5));
   }
 
+  const meta = await getCompanyMeta(input.companyDomain);
   return buildCompanyComparison(
     medians,
     input.companyDomain,
-    getCompanyMeta(input.companyDomain).name,
+    meta.name,
     today.usdBlueSell,
   );
 }

@@ -83,15 +83,26 @@ export const economicIndicators = dataSchema.table("economic_indicators", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+/** Admin-approved companies (on top of static tier1.json seed). */
+export const companies = dataSchema.table("companies", {
+  domain: text("domain").primaryKey(),
+  name: text("name").notNull(),
+  sizeBucket: text("size_bucket").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const domainRequests = dataSchema.table(
   "domain_requests",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     domain: text("domain").notNull(),
     requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow().notNull(),
+    status: text("status").default("pending").notNull(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
   },
   (t) => ({
     byDomain: index("domain_requests_domain_idx").on(t.domain),
+    byStatus: index("domain_requests_status_idx").on(t.status, t.requestedAt),
   }),
 );
 

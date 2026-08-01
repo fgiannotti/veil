@@ -31,30 +31,30 @@ describe("isPersonalDomain", () => {
 });
 
 describe("getCompanyMeta", () => {
-  it("returns known metadata for tier-1 companies", () => {
-    const m = getCompanyMeta("globant.com");
+  it("returns known metadata for tier-1 companies", async () => {
+    const m = await getCompanyMeta("globant.com");
     expect(m.name).toBe("Globant");
     expect(m.sizeBucket).toBe("5000+");
   });
 
-  it("falls back to a small bucket for unknown domains", () => {
-    const m = getCompanyMeta("unknown-startup.io");
+  it("falls back to a small bucket for unknown domains", async () => {
+    const m = await getCompanyMeta("unknown-startup.io");
     expect(m.name).toBe("unknown-startup.io");
     expect(m.sizeBucket).toBe("1-50");
   });
 });
 
 describe("resolveCompanyQuery", () => {
-  it("resolves company names and domains", () => {
-    expect(resolveCompanyQuery("Mercado Libre")).toBe("mercadolibre.com");
-    expect(resolveCompanyQuery("Globant")).toBe("globant.com");
-    expect(resolveCompanyQuery("mercadolibre.com")).toBe("mercadolibre.com");
-    expect(resolveCompanyQuery("@globant.com")).toBe("globant.com");
+  it("resolves company names and domains", async () => {
+    expect(await resolveCompanyQuery("Mercado Libre")).toBe("mercadolibre.com");
+    expect(await resolveCompanyQuery("Globant")).toBe("globant.com");
+    expect(await resolveCompanyQuery("mercadolibre.com")).toBe("mercadolibre.com");
+    expect(await resolveCompanyQuery("@globant.com")).toBe("globant.com");
   });
 
-  it("returns null for unknown or ambiguous input", () => {
-    expect(resolveCompanyQuery("Uala")).toBeNull();
-    expect(resolveCompanyQuery("")).toBeNull();
-    expect(resolveCompanyQuery("not a company")).toBeNull();
+  it("returns null for unknown or ambiguous input", async () => {
+    expect(await resolveCompanyQuery("Uala")).toBeNull();
+    expect(await resolveCompanyQuery("")).toBeNull();
+    expect(await resolveCompanyQuery("not a company")).toBeNull();
   });
 });

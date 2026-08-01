@@ -168,8 +168,8 @@ function VerifyPageInner() {
           </p>
           {reported ? (
             <p className="text-sm text-green-600">
-              Solicitud enviada. Mientras tanto podés probar con otro email laboral
-              de una empresa ya listada.
+              Solicitud enviada. Cuando agreguemos <strong>@{unknownDomain}</strong>{" "}
+              vas a poder verificar con ese email.
             </p>
           ) : (
             <button

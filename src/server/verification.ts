@@ -40,7 +40,7 @@ export async function startVerification(profileId: string, workEmail: string): P
       "Usá un email laboral, no uno personal (Gmail/Outlook/etc.)",
     );
   }
-  if (!isKnownDomain(domain)) {
+  if (!(await isKnownDomain(domain))) {
     throw new VerificationError(
       "unknown_domain",
       `El dominio @${domain} no está en nuestra lista de empresas verificadas.`,
@@ -87,7 +87,7 @@ export async function confirmVerification(
   if (!domain || isPersonalDomain(domain)) {
     throw new VerificationError("invalid_email", "Email laboral inválido");
   }
-  if (!isKnownDomain(domain)) {
+  if (!(await isKnownDomain(domain))) {
     throw new VerificationError(
       "unknown_domain",
       `El dominio @${domain} no está en nuestra lista de empresas verificadas.`,

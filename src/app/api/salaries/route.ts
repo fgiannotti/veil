@@ -141,7 +141,7 @@ export async function POST(req: Request) {
     .limit(1);
 
   const status = laterHigherEntries.length > 0 ? "pending" : "published";
-  const meta = getCompanyMeta(domain);
+  const meta = await getCompanyMeta(domain);
   const normalized = normalizeTagList(parsed.data.tags ?? []);
 
   await db.insert(salaryEntries).values({

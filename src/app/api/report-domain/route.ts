@@ -42,13 +42,21 @@ export async function POST(req: Request) {
   }
 
   const [existing] = await db
-    .select({ id: domainRequests.id })
+    .select({
+      id: domainRequests.id,
+      status: domainRequests.status,
+    })
     .from(domainRequests)
     .where(eq(domainRequests.domain, domain))
     .limit(1);
 
   if (!existing) {
-    await db.insert(domainRequests).values({ domain });
+    await db.insert(domainRequests).values({ domain, status: "pending" });
+  } else if (existing.status === "rejected") {
+    await db
+      .update(domainRequests)
+      .set({ status: "pending", resolvedAt: null, requestedAt: new Date() })
+      .where(eq(domainRequests.id, existing.id));
   }
 
   return NextResponse.json({ ok: true });

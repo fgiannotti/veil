@@ -52,7 +52,7 @@ export async function GET(req: Request) {
   }
 
   let companyDomain = parsed.data.companyDomain;
-  if (companyDomain && !isKnownDomain(companyDomain)) {
+  if (companyDomain && !(await isKnownDomain(companyDomain))) {
     return NextResponse.json(
       { error: "unknown_company", message: "Empresa desconocida" },
       { status: 400 },
@@ -62,7 +62,7 @@ export async function GET(req: Request) {
   let bucket = parsed.data.companySizeBucket;
   if (!companyDomain && bucket === "auto") {
     const domain = await getCurrentCompany(session.profileId);
-    bucket = domain ? getCompanyMeta(domain).sizeBucket : undefined;
+    bucket = domain ? (await getCompanyMeta(domain)).sizeBucket : undefined;
   }
 
   const result = await getBenchmark({

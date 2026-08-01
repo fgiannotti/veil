@@ -1,8 +1,19 @@
+import { eq } from "drizzle-orm";
 import tier1 from "./tier1.json";
+import { db } from "@/server/db/client";
+import { companies } from "@/server/db/schema/data";
 
 export type SizeBucket = "1-50" | "50-200" | "200-1000" | "1000-5000" | "5000+";
 
-interface CompanyMeta {
+export const SIZE_BUCKETS: SizeBucket[] = [
+  "1-50",
+  "50-200",
+  "200-1000",
+  "1000-5000",
+  "5000+",
+];
+
+export interface CompanyMeta {
   name: string;
   sizeBucket: SizeBucket;
 }
@@ -52,62 +63,107 @@ export function isPersonalDomain(domain: string): boolean {
   return BLOCKED_PERSONAL.has(domain.toLowerCase());
 }
 
-export function isKnownDomain(domain: string): boolean {
-  return domain.toLowerCase() in TIER1;
+async function dbCompany(domain: string): Promise<CompanyMeta | null> {
+  try {
+    const [row] = await db
+      .select({
+        name: companies.name,
+        sizeBucket: companies.sizeBucket,
+      })
+      .from(companies)
+      .where(eq(companies.domain, domain.toLowerCase()))
+      .limit(1);
+    if (!row) return null;
+    return { name: row.name, sizeBucket: row.sizeBucket as SizeBucket };
+  } catch {
+    // Unit tests / offline — fall back to static seed only.
+    return null;
+  }
 }
 
-export function getCompanyMeta(domain: string): CompanyMeta {
-  const meta = TIER1[domain.toLowerCase()];
-  if (meta) return meta;
-  return { name: domain, sizeBucket: inferSizeFromDomain(domain) };
+/** Known = static tier-1 seed ∪ admin-approved rows in `data.companies`. */
+export async function isKnownDomain(domain: string): Promise<boolean> {
+  const d = domain.toLowerCase();
+  if (d in TIER1) return true;
+  return Boolean(await dbCompany(d));
 }
 
-/**
- * Without a known company we cannot know the headcount; default to a small
- * bucket so unknown companies don't pollute large-cohort benchmarks.
- */
-function inferSizeFromDomain(_domain: string): SizeBucket {
-  return "1-50";
+export async function getCompanyMeta(domain: string): Promise<CompanyMeta> {
+  const d = domain.toLowerCase();
+  const seeded = TIER1[d];
+  if (seeded) return seeded;
+  const fromDb = await dbCompany(d);
+  if (fromDb) return fromDb;
+  return { name: domain, sizeBucket: "1-50" };
 }
 
-export function listKnownCompanies(): { domain: string; name: string; sizeBucket: SizeBucket }[] {
-  return Object.entries(TIER1).map(([domain, meta]) => ({ domain, ...meta }));
+export async function listKnownCompanies(): Promise<
+  { domain: string; name: string; sizeBucket: SizeBucket }[]
+> {
+  const seeded = Object.entries(TIER1).map(([domain, meta]) => ({ domain, ...meta }));
+  let rows: { domain: string; name: string; sizeBucket: string }[] = [];
+  try {
+    rows = await db
+      .select({
+        domain: companies.domain,
+        name: companies.name,
+        sizeBucket: companies.sizeBucket,
+      })
+      .from(companies);
+  } catch {
+    // Unit tests / offline — static seed only.
+  }
+
+  const byDomain = new Map<string, { domain: string; name: string; sizeBucket: SizeBucket }>();
+  for (const c of seeded) byDomain.set(c.domain, c);
+  for (const r of rows) {
+    byDomain.set(r.domain, {
+      domain: r.domain,
+      name: r.name,
+      sizeBucket: r.sizeBucket as SizeBucket,
+    });
+  }
+  return [...byDomain.values()];
 }
 
 /**
  * Resolve user input (company name or email domain) to a company domain.
  * Returns null when the input cannot be matched unambiguously.
  */
-export function resolveCompanyQuery(input: string): string | null {
+export async function resolveCompanyQuery(input: string): Promise<string | null> {
   const trimmed = input.trim();
   if (!trimmed) return null;
 
   const asDomain = normalizeCompanyDomain(trimmed);
   if (asDomain.startsWith("_")) return null;
 
-  if (asDomain.includes(".")) return asDomain;
+  if (asDomain.includes(".")) {
+    if (await isKnownDomain(asDomain)) return asDomain;
+    return asDomain;
+  }
 
   const lower = trimmed.toLowerCase();
+  const all = await listKnownCompanies();
 
-  const byName = Object.entries(TIER1).filter(([, meta]) => meta.name.toLowerCase() === lower);
-  if (byName.length === 1) return byName[0]![0];
+  const byName = all.filter((c) => c.name.toLowerCase() === lower);
+  if (byName.length === 1) return byName[0]!.domain;
   if (byName.length > 1) return null;
 
-  const byDomainPrefix = Object.keys(TIER1).filter(
-    (d) => d === asDomain || d.startsWith(`${asDomain}.`),
+  const byDomainPrefix = all.filter(
+    (c) => c.domain === asDomain || c.domain.startsWith(`${asDomain}.`),
   );
-  if (byDomainPrefix.length === 1) return byDomainPrefix[0]!;
+  if (byDomainPrefix.length === 1) return byDomainPrefix[0]!.domain;
 
   return null;
 }
 
-/** Resolve input to a tier-1 company domain + size bucket, or null if unknown. */
-export function resolveKnownCompany(
+/** Resolve input to a known company domain + size bucket, or null if unknown. */
+export async function resolveKnownCompany(
   input: string,
-): { domain: string; name: string; sizeBucket: SizeBucket } | null {
-  const domain = resolveCompanyQuery(input);
+): Promise<{ domain: string; name: string; sizeBucket: SizeBucket } | null> {
+  const domain = await resolveCompanyQuery(input);
   if (!domain) return null;
-  const meta = TIER1[domain.toLowerCase()];
-  if (!meta) return null;
+  if (!(await isKnownDomain(domain))) return null;
+  const meta = await getCompanyMeta(domain);
   return { domain, ...meta };
 }

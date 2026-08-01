@@ -28,6 +28,11 @@ export function SiteHeader() {
               <Link href="/companies" className="text-ink/70 hover:text-ink">
                 empresas
               </Link>
+              {session?.isAdmin ? (
+                <Link href="/admin/domains" className="text-ink/70 hover:text-ink">
+                  admin
+                </Link>
+              ) : null}
               <button
                 className="text-ink/70 hover:text-ink"
                 type="button"
