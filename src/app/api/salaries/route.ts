@@ -38,8 +38,16 @@ export async function GET() {
     .orderBy(desc(salaryEntries.paymentMonth));
 
   const hasPublishedEntry = rows.some((r) => r.status === "published");
+  const hasPendingEntry = rows.some((r) => r.status === "pending");
+  const companyDomain = await getCurrentCompany(session.profileId);
 
-  return NextResponse.json({ entries: rows, hasPublishedEntry });
+  return NextResponse.json({
+    entries: rows,
+    hasPublishedEntry,
+    hasPendingEntry,
+    verified: Boolean(companyDomain),
+    companyDomain,
+  });
 }
 
 export async function POST(req: Request) {

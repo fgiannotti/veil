@@ -1,14 +1,31 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GoogleIcon } from "@/components/GoogleIcon";
+import { OnboardingSteps } from "@/components/OnboardingSteps";
 import { apiErrorMessage } from "@/lib/api-errors";
+import {
+  readOnboardingPrefill,
+  withOnboardingPrefill,
+} from "@/lib/onboarding";
 
 export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
+  return (
+    <Suspense>
+      <SignupFormInner googleEnabled={googleEnabled} />
+    </Suspense>
+  );
+}
+
+function SignupFormInner({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prefill = readOnboardingPrefill(searchParams);
+  const verifyUrl = withOnboardingPrefill("/verify", prefill);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -31,10 +48,10 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
         email,
         password,
         redirect: false,
-        callbackUrl: "/verify",
+        callbackUrl: verifyUrl,
       });
       if (signin?.error) throw new Error("No se pudo iniciar sesión luego del registro");
-      router.push("/verify");
+      router.push(verifyUrl);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -42,13 +59,18 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
     }
   }
 
+  const loginHref = withOnboardingPrefill("/login", prefill);
+
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-xl font-semibold">Creá tu cuenta en Bench</h1>
-      <p className="text-sm text-ink/70">
-        Creá una cuenta para verificar tu email laboral y contribuir sueldos verificados.
-        Solo el dominio de tu empresa queda asociado a tus entradas.
-      </p>
+      <OnboardingSteps current={1} />
+      <div>
+        <h1 className="text-xl font-semibold">Creá tu cuenta en Bench</h1>
+        <p className="mt-2 text-sm text-ink/70">
+          Creá una cuenta para verificar tu email laboral y contribuir sueldos verificados.
+          Solo el dominio de tu empresa queda asociado a tus entradas.
+        </p>
+      </div>
       <form onSubmit={submit} className="card space-y-3">
         <div>
           <label className="label" htmlFor="email">
@@ -98,7 +120,7 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
         <button
           type="button"
           className="btn-secondary flex w-full items-center justify-center gap-2"
-          onClick={() => signIn("google", { callbackUrl: "/verify" })}
+          onClick={() => signIn("google", { callbackUrl: verifyUrl })}
         >
           <GoogleIcon />
           Continuar con Google
@@ -106,7 +128,7 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
       ) : null}
       <p className="text-center text-sm text-ink/70">
         ¿Ya tenés cuenta?{" "}
-        <Link href="/login" className="underline">
+        <Link href={loginHref} className="underline">
           Ingresá
         </Link>
       </p>

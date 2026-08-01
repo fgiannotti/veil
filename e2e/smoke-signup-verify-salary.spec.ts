@@ -30,12 +30,8 @@ test("signup → verify work email → publish salary", async ({ page }) => {
   await page.getByRole("button", { name: "Verificar" }).click();
 
   await expect(page.getByText(/¡Verificado!/i)).toBeVisible();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
-  await expect(page.getByText(/Verificado en/i)).toBeVisible();
-  await expect(page.getByText("@globant.com")).toBeVisible();
-
-  await page.getByRole("link", { name: "Agregar sueldo" }).click();
-  await expect(page).toHaveURL(/\/salaries\/new/);
+  // Onboarding continues to first salary after work-email verification.
+  await expect(page).toHaveURL(/\/salaries\/new/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: /Registrar un sueldo/i })).toBeVisible();
 
   await page.getByLabel("Rol").selectOption("backend");
@@ -52,6 +48,8 @@ test("signup → verify work email → publish salary", async ({ page }) => {
 
   // Hard navigation avoids App Router soft-cache showing an empty dashboard.
   await page.goto("/dashboard");
+  await expect(page.getByText(/Verificado en/i)).toBeVisible();
+  await expect(page.getByText("@globant.com")).toBeVisible();
   await expect(page.getByText("Sin entradas todavía.")).toHaveCount(0);
   const entry = page.locator("li").filter({ hasText: "Backend · Senior" });
   await expect(entry).toBeVisible();

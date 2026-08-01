@@ -6,11 +6,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { safeCallbackUrl } from "@/lib/safe-callback-url";
 import { GoogleIcon } from "@/components/GoogleIcon";
+import {
+  hasOnboardingPrefill,
+  readOnboardingPrefill,
+  withOnboardingPrefill,
+} from "@/lib/onboarding";
 
 export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = safeCallbackUrl(params.get("callbackUrl"));
+  const prefill = readOnboardingPrefill(params);
+  const rawCallback = params.get("callbackUrl");
+  const callbackUrl = rawCallback
+    ? safeCallbackUrl(rawCallback)
+    : hasOnboardingPrefill(prefill)
+      ? withOnboardingPrefill("/verify", prefill)
+      : safeCallbackUrl(null);
   const authError = params.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +49,8 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
     }
     router.push(callbackUrl);
   }
+
+  const signupHref = withOnboardingPrefill("/signup", prefill);
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
@@ -88,7 +101,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
       ) : null}
       <p className="text-center text-sm text-ink/70">
         ¿Primera vez?{" "}
-        <Link href="/signup" className="underline">
+        <Link href={signupHref} className="underline">
           Registrate
         </Link>
       </p>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { parseArsInput } from "@/lib/currency";
 import { formatSeniority, SENIORITIES, type Seniority } from "@/lib/seniority";
 import { ROLES, formatRole, type Role } from "@/lib/roles";
@@ -9,15 +9,38 @@ import { SALARY_LIMITS } from "@/lib/salary-limits";
 import { apiErrorMessage } from "@/lib/api-errors";
 import { currentYearMonth } from "@/lib/dates";
 import { BenefitTagsPicker } from "@/components/BenefitTagsPicker";
+import { MonthInput } from "@/components/MonthInput";
+import { OnboardingSteps } from "@/components/OnboardingSteps";
+import {
+  hasOnboardingPrefill,
+  readOnboardingPrefill,
+  withOnboardingPrefill,
+} from "@/lib/onboarding";
 
 const MIN_PAYMENT_MONTH = "2023-01";
 
 export default function NewSalaryPage() {
+  return (
+    <Suspense>
+      <NewSalaryPageInner />
+    </Suspense>
+  );
+}
+
+function NewSalaryPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prefill = readOnboardingPrefill(searchParams);
+  const fromOnboarding = hasOnboardingPrefill(prefill);
+
   const [role, setRole] = useState<Role>("backend");
   const [seniority, setSeniority] = useState<Seniority>("senior");
-  const [arsRaw, setArsRaw] = useState("");
-  const [paymentMonth, setPaymentMonth] = useState(currentYearMonth);
+  const [arsRaw, setArsRaw] = useState(prefill.netArs ?? "");
+  const [paymentMonth, setPaymentMonth] = useState(
+    prefill.month && prefill.month <= currentYearMonth()
+      ? prefill.month
+      : currentYearMonth(),
+  );
   const [tags, setTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -52,7 +75,7 @@ export default function NewSalaryPage() {
       const json = await res.json();
       if (!res.ok) {
         if (json.error === "needs_verification") {
-          router.push("/verify");
+          router.push(withOnboardingPrefill("/verify", prefill));
           return;
         }
         throw new Error(apiErrorMessage(json));
@@ -61,7 +84,7 @@ export default function NewSalaryPage() {
         setPending(true);
         return;
       }
-      router.push("/dashboard");
+      router.push(fromOnboarding ? "/benchmark" : "/dashboard");
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -73,6 +96,7 @@ export default function NewSalaryPage() {
   if (pending) {
     return (
       <div className="mx-auto max-w-md space-y-4">
+        {fromOnboarding ? <OnboardingSteps current={3} /> : null}
         <h1 className="text-xl font-semibold">Sueldo en revisión</h1>
         <div className="card space-y-2 text-sm text-ink/70">
           <p>
@@ -80,13 +104,12 @@ export default function NewSalaryPage() {
             a sueldos posteriores que ya tenés cargados.
           </p>
           <p>
-            Esto puede ser completamente válido (por ejemplo, si cambiaste de trabajo),
-            pero lo revisamos manualmente para mantener la calidad de los datos.
-            Revisá el estado en tu dashboard.
+            Mientras esté en revisión no desbloquea el benchmark. Revisá el estado en tu
+            dashboard.
           </p>
         </div>
         <button className="btn-secondary" onClick={() => router.push("/dashboard")}>
-          Volver al inicio
+          Volver al panel
         </button>
       </div>
     );
@@ -94,11 +117,15 @@ export default function NewSalaryPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-6">
-      <h1 className="text-xl font-semibold">Registrar un sueldo</h1>
-      <p className="text-sm text-ink/70">
-        Guardamos rol, seniority, monto, mes, beneficios/tags y el dominio de tu email laboral
-        verificado como insignia de empresa.
-      </p>
+      {fromOnboarding ? <OnboardingSteps current={3} /> : null}
+      <div>
+        <h1 className="text-xl font-semibold">Registrar un sueldo</h1>
+        <p className="mt-2 text-sm text-ink/70">
+          {fromOnboarding
+            ? "Usamos el monto de la calculadora como punto de partida. Completá rol y seniority para compararte con los benchmarks."
+            : "Guardamos rol, seniority, monto, mes, beneficios/tags y el dominio de tu email laboral verificado como insignia de empresa."}
+        </p>
+      </div>
       <form onSubmit={submit} className="card space-y-3">
         <div>
           <label className="label" htmlFor="role">
@@ -153,21 +180,18 @@ export default function NewSalaryPage() {
           <label className="label" htmlFor="month">
             Mes de pago
           </label>
-          <input
+          <MonthInput
             id="month"
-            type="month"
-            className="input"
-            lang="es-AR"
             value={paymentMonth}
             min={MIN_PAYMENT_MONTH}
             max={currentYearMonth()}
-            onChange={(e) => setPaymentMonth(e.target.value)}
             required
+            onChange={setPaymentMonth}
           />
         </div>
         <BenefitTagsPicker value={tags} onChange={setTags} />
         <button className="btn" type="submit" disabled={loading}>
-          {loading ? "Guardando..." : "Guardar"}
+          {loading ? "Guardando..." : fromOnboarding ? "Guardar y ver benchmark" : "Guardar"}
         </button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </form>
