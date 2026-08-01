@@ -102,7 +102,14 @@ export default async function DashboardPage() {
 
       <section className="card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">Historial de sueldo real</h2>
+          <div>
+            <h2 className="text-lg font-semibold">Historial de sueldo real</h2>
+            {today ? (
+              <p className="mt-0.5 text-xs text-ink/55">
+                Dólar blue hoy: {formatArs(Math.round(today.usdBlueSell))}
+              </p>
+            ) : null}
+          </div>
           <div className="flex gap-2">
             <Link href="/companies" className="btn-secondary">
               Ver por empresa
@@ -155,7 +162,12 @@ export default async function DashboardPage() {
                       <div>{formatArs(Number(e.netArs))}</div>
                       {r ? (
                         <div className="text-xs text-ink/60">
-                          {formatUsd(r.usdValueAtPayment)} blue ·{" "}
+                          {formatUsd(r.usdValueAtPayment)} blue
+                          <span className="text-ink/40">
+                            {" "}
+                            @ {formatArs(Math.round(r.usdBlueAtPayment))}
+                          </span>
+                          {" · "}
                           {formatArs(r.realArsToday)} hoy
                         </div>
                       ) : null}

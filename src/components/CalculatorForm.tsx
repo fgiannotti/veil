@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { RealWageChart } from "./RealWageChart";
 import { MonthInput } from "./MonthInput";
-import { formatArs, formatUsd, parseArsInput } from "@/lib/currency";
+import { formatArs, formatArsInput, formatUsd, parseArsInput } from "@/lib/currency";
 import { apiErrorMessage } from "@/lib/api-errors";
 import { currentYearMonth } from "@/lib/dates";
 import { withOnboardingPrefill } from "@/lib/onboarding";
@@ -30,7 +30,7 @@ interface Result {
 }
 
 export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
-  const [arsRaw, setArsRaw] = useState("500000");
+  const [arsRaw, setArsRaw] = useState("500.000");
   const [month, setMonth] = useState(currentYearMonth);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,10 +78,10 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
             className="input"
             value={arsRaw}
             onChange={(e) => {
-              setArsRaw(e.target.value);
+              setArsRaw(formatArsInput(e.target.value));
               clearResult();
             }}
-            placeholder="500000"
+            placeholder="1.500.000"
           />
         </div>
         <div>

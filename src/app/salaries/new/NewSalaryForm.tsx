@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatArsInput, parseArsInput } from "@/lib/currency";
 import { formatSeniority, SENIORITIES, type Seniority } from "@/lib/seniority";
 import { ROLES, formatRole, type Role } from "@/lib/roles";
@@ -10,52 +9,46 @@ import { apiErrorMessage } from "@/lib/api-errors";
 import { currentYearMonth } from "@/lib/dates";
 import { BenefitTagsPicker } from "@/components/BenefitTagsPicker";
 import { MonthInput } from "@/components/MonthInput";
+import { OnboardingSteps } from "@/components/OnboardingSteps";
 import { SalaryAmountField } from "@/components/SalaryAmountField";
 import type { SalaryCurrency } from "@/lib/zod-schemas";
+import {
+  hasOnboardingPrefill,
+  readOnboardingPrefill,
+  withOnboardingPrefill,
+} from "@/lib/onboarding";
 
 const MIN_PAYMENT_MONTH = "2023-01";
 
-export default function EditSalaryPage() {
+export function NewSalaryForm({ companyName }: { companyName: string | null }) {
+  return (
+    <Suspense>
+      <NewSalaryFormInner companyName={companyName} />
+    </Suspense>
+  );
+}
+
+function NewSalaryFormInner({ companyName }: { companyName: string | null }) {
   const router = useRouter();
-  const params = useParams<{ id: string }>();
-  const id = params.id;
+  const searchParams = useSearchParams();
+  const prefill = readOnboardingPrefill(searchParams);
+  const fromOnboarding = hasOnboardingPrefill(prefill);
 
   const [role, setRole] = useState<Role>("backend");
   const [seniority, setSeniority] = useState<Seniority>("senior");
   const [currency, setCurrency] = useState<SalaryCurrency>("ARS");
-  const [amountRaw, setAmountRaw] = useState("");
-  const [paymentMonth, setPaymentMonth] = useState(currentYearMonth);
+  const [amountRaw, setAmountRaw] = useState(() =>
+    prefill.netArs ? formatArsInput(prefill.netArs) : "",
+  );
+  const [paymentMonth, setPaymentMonth] = useState(
+    prefill.month && prefill.month <= currentYearMonth()
+      ? prefill.month
+      : currentYearMonth(),
+  );
   const [tags, setTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [booting, setBooting] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/salaries/${id}`);
-        const json = await res.json();
-        if (!res.ok) throw new Error(apiErrorMessage(json, "No se pudo cargar"));
-        if (cancelled) return;
-        const e = json.entry;
-        setRole(e.role as Role);
-        setSeniority(e.seniority as Seniority);
-        setCurrency("ARS");
-        setAmountRaw(formatArsInput(String(e.netArs)));
-        setPaymentMonth(String(e.paymentMonth).slice(0, 7));
-        setTags(Array.isArray(e.tags) ? e.tags : []);
-      } catch (err) {
-        if (!cancelled) setError((err as Error).message);
-      } finally {
-        if (!cancelled) setBooting(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,8 +60,8 @@ export default function EditSalaryPage() {
         throw new Error("Ingresá un monto válido.");
       }
 
-      const res = await fetch(`/api/salaries/${id}`, {
-        method: "PATCH",
+      const res = await fetch("/api/salaries", {
+        method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           role,
@@ -82,7 +75,7 @@ export default function EditSalaryPage() {
       const json = await res.json();
       if (!res.ok) {
         if (json.error === "needs_verification") {
-          router.push("/verify");
+          router.push(withOnboardingPrefill("/verify", prefill));
           return;
         }
         throw new Error(apiErrorMessage(json));
@@ -91,7 +84,7 @@ export default function EditSalaryPage() {
         setPending(true);
         return;
       }
-      router.push("/dashboard");
+      router.push(fromOnboarding ? "/benchmark" : "/dashboard");
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -100,38 +93,45 @@ export default function EditSalaryPage() {
     }
   }
 
-  if (booting) {
-    return (
-      <div className="mx-auto max-w-md">
-        <p className="text-sm text-ink/60">Cargando…</p>
-      </div>
-    );
-  }
-
   if (pending) {
     return (
       <div className="mx-auto max-w-md space-y-4">
+        {fromOnboarding ? <OnboardingSteps current={3} /> : null}
         <h1 className="text-xl font-semibold">Sueldo en revisión</h1>
         <div className="card space-y-2 text-sm text-ink/70">
           <p>
-            La edición quedó <strong>pendiente de revisión</strong> porque el monto es menor
-            a sueldos posteriores publicados.
+            Tu entrada quedó <strong>pendiente de revisión</strong> porque el monto es menor
+            a sueldos posteriores que ya tenés cargados.
+          </p>
+          <p>
+            Mientras esté en revisión no desbloquea el benchmark. Revisá el estado en tu
+            dashboard.
           </p>
         </div>
-        <Link href="/dashboard" className="btn-secondary inline-block">
+        <button className="btn-secondary" onClick={() => router.push("/dashboard")}>
           Volver al panel
-        </Link>
+        </button>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-md space-y-6">
+      {fromOnboarding ? <OnboardingSteps current={3} /> : null}
       <div>
-        <h1 className="text-xl font-semibold">Editar sueldo</h1>
+        <h1 className="text-xl font-semibold">
+          Registrar un sueldo
+          {companyName ? (
+            <>
+              {" "}
+              para <span className="whitespace-nowrap">{companyName}</span>
+            </>
+          ) : null}
+        </h1>
         <p className="mt-2 text-sm text-ink/70">
-          Corregí monto, rol o mes. Si el cambio dispara revisión manual, vas a ver el estado
-          en el panel.
+          {fromOnboarding
+            ? "Usamos el monto de la calculadora como punto de partida. Completá rol y seniority para compararte con los benchmarks."
+            : "Guardamos rol, seniority, monto, mes, beneficios/tags y el dominio de tu email laboral verificado como insignia de empresa."}
         </p>
       </div>
       <form onSubmit={submit} className="card space-y-3">
@@ -156,6 +156,7 @@ export default function EditSalaryPage() {
           <label className="label" htmlFor="seniority">
             Seniority
           </label>
+
           <select
             id="seniority"
             className="input"
@@ -190,14 +191,9 @@ export default function EditSalaryPage() {
           onAmountRawChange={setAmountRaw}
         />
         <BenefitTagsPicker value={tags} onChange={setTags} />
-        <div className="flex flex-wrap gap-2">
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Guardando..." : "Guardar cambios"}
-          </button>
-          <Link href="/dashboard" className="btn-secondary">
-            Cancelar
-          </Link>
-        </div>
+        <button className="btn" type="submit" disabled={loading}>
+          {loading ? "Guardando..." : fromOnboarding ? "Guardar y ver benchmark" : "Guardar"}
+        </button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </form>
     </div>

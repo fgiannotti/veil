@@ -36,7 +36,20 @@ export function OnboardingSteps({ current }: { current: OnboardingStepId }) {
                   }
                   aria-current={active ? "step" : undefined}
                 >
-                  {step.id}
+                  {done ? (
+                    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden>
+                      <path
+                        d="M3.5 8.5 6.5 11.5 12.5 4.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ) : (
+                    step.id
+                  )}
                 </span>
                 {i < STEPS.length - 1 ? (
                   <span
