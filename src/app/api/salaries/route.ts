@@ -11,6 +11,7 @@ import { formatSeniority } from "@/lib/seniority";
 import { clientIp, rateLimit, rateLimitedResponse } from "@/server/rate-limit";
 import { normalizeTagList } from "@/lib/benefit-tags";
 import { upsertBenefitTags } from "@/server/tags";
+import { resolveNetArs } from "@/server/salaries/resolve-net-ars";
 
 const MAX_ENTRIES_PER_MONTH = 1;
 
@@ -105,10 +106,24 @@ export async function POST(req: Request) {
     );
   }
 
+  let netArs: number;
+  try {
+    ({ netArs } = await resolveNetArs(
+      parsed.data.currency,
+      parsed.data.amount,
+      parsed.data.paymentMonth,
+    ));
+  } catch {
+    return NextResponse.json(
+      { error: "no_indicators", message: "Indicadores económicos no disponibles" },
+      { status: 503 },
+    );
+  }
+
   const limits = SALARY_LIMITS[parsed.data.seniority];
   const seniorityLabel = formatSeniority(parsed.data.seniority);
 
-  if (parsed.data.netArs < limits.min) {
+  if (netArs < limits.min) {
     return NextResponse.json(
       {
         error: "salary_too_low",
@@ -117,7 +132,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (parsed.data.netArs > limits.max) {
+  if (netArs > limits.max) {
     return NextResponse.json(
       {
         error: "salary_too_high",
@@ -135,7 +150,7 @@ export async function POST(req: Request) {
         eq(salaryEntries.profileId, session.profileId),
         eq(salaryEntries.status, "published"),
         gt(salaryEntries.paymentMonth, parsed.data.paymentMonth),
-        gt(salaryEntries.netArs, parsed.data.netArs),
+        gt(salaryEntries.netArs, netArs),
       ),
     )
     .limit(1);
@@ -150,7 +165,7 @@ export async function POST(req: Request) {
     seniority: parsed.data.seniority,
     companyDomain: domain,
     companySizeBucket: meta.sizeBucket,
-    netArs: parsed.data.netArs,
+    netArs,
     paymentMonth: parsed.data.paymentMonth,
     tags: normalized.map((t) => t.label),
     source: "user",

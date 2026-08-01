@@ -11,6 +11,7 @@ import { formatSeniority } from "@/lib/seniority";
 import { clientIp, rateLimit, rateLimitedResponse } from "@/server/rate-limit";
 import { normalizeTagList } from "@/lib/benefit-tags";
 import { upsertBenefitTags } from "@/server/tags";
+import { resolveNetArs } from "@/server/salaries/resolve-net-ars";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -108,16 +109,30 @@ export async function PATCH(req: Request, ctx: Ctx) {
     );
   }
 
+  let netArs: number;
+  try {
+    ({ netArs } = await resolveNetArs(
+      parsed.data.currency,
+      parsed.data.amount,
+      parsed.data.paymentMonth,
+    ));
+  } catch {
+    return NextResponse.json(
+      { error: "no_indicators", message: "Indicadores económicos no disponibles" },
+      { status: 503 },
+    );
+  }
+
   const limits = SALARY_LIMITS[parsed.data.seniority];
   const seniorityLabel = formatSeniority(parsed.data.seniority);
 
-  if (parsed.data.netArs < limits.min) {
+  if (netArs < limits.min) {
     return NextResponse.json(
       { error: "salary_too_low", message: `Para ${seniorityLabel}, el monto es muy bajo.` },
       { status: 400 },
     );
   }
-  if (parsed.data.netArs > limits.max) {
+  if (netArs > limits.max) {
     return NextResponse.json(
       { error: "salary_too_high", message: `Para ${seniorityLabel}, el monto es muy alto.` },
       { status: 400 },
@@ -133,7 +148,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
         eq(salaryEntries.status, "published"),
         ne(salaryEntries.id, id),
         gt(salaryEntries.paymentMonth, parsed.data.paymentMonth),
-        gt(salaryEntries.netArs, parsed.data.netArs),
+        gt(salaryEntries.netArs, netArs),
       ),
     )
     .limit(1);
@@ -149,7 +164,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
       seniority: parsed.data.seniority,
       companyDomain: domain,
       companySizeBucket: meta.sizeBucket,
-      netArs: parsed.data.netArs,
+      netArs,
       paymentMonth: parsed.data.paymentMonth,
       tags: normalized.map((t) => t.label),
       status,

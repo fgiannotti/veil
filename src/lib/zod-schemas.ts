@@ -30,10 +30,15 @@ export const Role = z
   .max(80)
   .transform((s) => s.trim().toLowerCase());
 
+export const SalaryCurrency = z.enum(["ARS", "USD"]);
+export type SalaryCurrency = z.infer<typeof SalaryCurrency>;
+
 export const SalaryEntryInput = z.object({
   role: RoleCategory,
   seniority: Seniority,
-  netArs: z.number().int().positive().max(100_000_000),
+  /** Currency of `amount`. USD is converted to ARS with blue sell of the payment month. */
+  currency: SalaryCurrency.default("ARS"),
+  amount: z.number().int().positive().max(100_000_000),
   paymentMonth: paymentMonthSchema("No se puede cargar un sueldo de un mes futuro"),
   tags: z
     .array(z.string())

@@ -29,7 +29,7 @@ test("signup → verify work email → publish salary", async ({ page }) => {
   await page.getByLabel("Código de 6 dígitos").fill(code);
   await page.getByRole("button", { name: "Verificar" }).click();
 
-  await expect(page.getByText(/¡Verificado!/i)).toBeVisible();
+  await expect(page.getByText(/Email verificado/i)).toBeVisible();
   // Onboarding continues to first salary after work-email verification.
   await expect(page).toHaveURL(/\/salaries\/new/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: /Registrar un sueldo/i })).toBeVisible();
