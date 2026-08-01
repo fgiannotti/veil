@@ -16,6 +16,7 @@ interface Breakdown {
   paymentMonth: string;
   todayMonth: string;
   usdBlueAtPayment: number;
+  usdBlueToday: number;
   usdValueAtPayment: number;
   realArsToday: number;
   usdValueToday: number;
@@ -107,22 +108,27 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
           ) : null}
           <Row label="ARS neto al cobro" value={formatArs(result.breakdown.netArs)} />
           <Row
-            label="USD Blue al cobro"
+            label="Sueldo en USD al cobro"
             value={`${formatUsd(result.breakdown.usdValueAtPayment)} (blue ${formatArs(result.breakdown.usdBlueAtPayment)}/USD)`}
           />
           <Row
-            label="USD Blue hoy"
-            value={formatUsd(result.breakdown.usdValueToday)}
+            label="Sueldo en USD hoy"
+            value={`${formatUsd(result.breakdown.usdValueToday)} (blue ${formatArs(result.breakdown.usdBlueToday)}/USD)`}
           />
           <Row
             label="Equivalente en pesos de hoy (IPC)"
             value={result.breakdown.ipcDataStale ? "—" : formatArs(result.breakdown.realArsToday)}
           />
-          <Row
-            label="Variación precio dólar blue"
-            value={`${result.breakdown.purchasingPowerChangePct.toFixed(1)}%`}
-            tone={result.breakdown.purchasingPowerChangePct >= 0 ? "good" : "bad"}
-          />
+          <div>
+            <Row
+              label="Variación del sueldo en USD"
+              value={`${result.breakdown.purchasingPowerChangePct.toFixed(1)}%`}
+              tone={result.breakdown.purchasingPowerChangePct >= 0 ? "good" : "bad"}
+            />
+            <p className="mt-1 text-xs text-ink/50">
+              Si el blue sube, el mismo sueldo en pesos compra menos dólares (variación negativa).
+            </p>
+          </div>
           <div className="pt-2">
             <p className="label">Valor mensual en USD de ese sueldo</p>
             <RealWageChart data={result.chart} />
