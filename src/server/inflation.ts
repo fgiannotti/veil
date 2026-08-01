@@ -124,9 +124,11 @@ export interface RealWageBreakdown {
   paymentMonth: string;
   todayMonth: string;
   usdBlueAtPayment: number;
+  usdBlueToday: number;
   usdValueAtPayment: number;
   realArsToday: number;
   usdValueToday: number;
+  /** Change in USD value of the same ARS salary (not the ARS/USD quote change). */
   purchasingPowerChangePct: number;
   ipcDataStale: boolean;
 }
@@ -153,6 +155,7 @@ export function computeRealWage(
     paymentMonth,
     todayMonth: todayIndicator.date,
     usdBlueAtPayment: paymentIndicator.usdBlueSell,
+    usdBlueToday: todayIndicator.usdBlueSell,
     usdValueAtPayment,
     realArsToday,
     usdValueToday,

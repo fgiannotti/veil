@@ -78,6 +78,7 @@ describe("computeRealWage", () => {
   it("captures purchasing-power change in USD Blue terms", () => {
     const r = computeRealWage(365_000, "2023-01-01", jan23, may26);
     expect(r.usdValueAtPayment).toBeCloseTo(1000, 6);
+    expect(r.usdBlueToday).toBe(may26.usdBlueSell);
     expect(r.usdValueToday).toBeCloseTo(365_000 / 1745, 6);
     expect(r.purchasingPowerChangePct).toBeLessThan(0); // peso lost USD value
   });
