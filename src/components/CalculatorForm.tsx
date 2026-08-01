@@ -36,9 +36,15 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
+  function clearResult() {
+    setResult(null);
+    setError(null);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setResult(null);
     setLoading(true);
     try {
       const res = await fetch("/api/calculator", {
@@ -71,7 +77,10 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
             inputMode="numeric"
             className="input"
             value={arsRaw}
-            onChange={(e) => setArsRaw(e.target.value)}
+            onChange={(e) => {
+              setArsRaw(e.target.value);
+              clearResult();
+            }}
             placeholder="500000"
           />
         </div>
@@ -84,7 +93,10 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
             value={month}
             min={MIN_PAYMENT_MONTH}
             max={currentYearMonth()}
-            onChange={setMonth}
+            onChange={(value) => {
+              setMonth(value);
+              clearResult();
+            }}
           />
         </div>
         <button className="btn" type="submit" disabled={loading}>
@@ -119,16 +131,11 @@ export function CalculatorForm({ loggedIn = false }: { loggedIn?: boolean }) {
             label="Equivalente en pesos de hoy (IPC)"
             value={result.breakdown.ipcDataStale ? "—" : formatArs(result.breakdown.realArsToday)}
           />
-          <div>
-            <Row
-              label="Variación del sueldo en USD"
-              value={`${result.breakdown.purchasingPowerChangePct.toFixed(1)}%`}
-              tone={result.breakdown.purchasingPowerChangePct >= 0 ? "good" : "bad"}
-            />
-            <p className="mt-1 text-xs text-ink/50">
-              Si el blue sube, el mismo sueldo en pesos compra menos dólares (variación negativa).
-            </p>
-          </div>
+          <Row
+            label="Variación del sueldo en USD"
+            value={`${result.breakdown.purchasingPowerChangePct.toFixed(1)}%`}
+            tone={result.breakdown.purchasingPowerChangePct >= 0 ? "good" : "bad"}
+          />
           <div className="pt-2">
             <p className="label">Valor mensual en USD de ese sueldo</p>
             <RealWageChart data={result.chart} />
